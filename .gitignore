@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.DS_Store
+# личные рабочие заметки автора, в репозиторий не попадают
+SESSION_NOTES.md
