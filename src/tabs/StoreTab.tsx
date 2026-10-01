@@ -5,6 +5,7 @@ import { calcStore, margin, perDay, type Totals } from '../engine/store';
 import { uid } from '../engine/taxPresets';
 import type { OverheadKind, PlanItem } from '../engine/types';
 import { Card, CurrencySelect, Del, GroupedInt, Note, Num, Pair, Select, Th, Tip, Unit, type Fmt } from '../ui/kit';
+import { TAX_BASES } from '../ui/tips';
 
 type P = TabProps & { fmt: Fmt; pc: ProductCalcs };
 type MetricColor = 'revenue' | 'cogs' | 'ads' | 'overhead' | 'margin' | 'contrib' | 'profit';
@@ -143,7 +144,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
         </Card>
 
         <Card ckey="store:overhead" step="3" title="Накладные расходы"
-          tip={'Всё, что вы тратите кроме товара и рекламы: доставка, упаковка, хранение, зарплаты, сервисы, бухгалтер, комиссии, возвраты.\nКак считать каждый расход:\nСумма в месяц: одна сумма за весь месяц, например аренда склада.\n% от оборота: процент от оборота (выручка без НДС, если вы с НДС), например эквайринг.\nЗа штуку: сумма за каждую проданную штуку, например курьер или хранение одной единицы. Умножается на число проданных заказов.'}>
+          tip={'Всё, что вы тратите кроме товара и рекламы: доставка, упаковка, хранение, зарплаты, сервисы, бухгалтер, комиссии, возвраты.\nКак считать каждый расход:\nСумма в месяц: одна сумма за весь месяц, например аренда склада.\n% от оборота: процент от оборота (выручка без НДС, если вы с НДС), например эквайринг.\nЗа штуку: сумма за каждую проданную штуку, например курьер или хранение одной единицы. Умножается на число проданных заказов.\nНалоги по режиму из «Настроек» добавляются снизу сами и входят в накладные расходы.'}>
           <div className="expense-list">
             {st.overhead.length > 0 && (
               <div className="expense-row ovh head">
@@ -169,6 +170,21 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
               );
             })}
             <button className="btn sm add-btn" onClick={() => mutate(d => { d.store.overhead.push({ id: uid(), name: 'Новый расход', kind: 'fixed', amount: 0, currency: d.settings.baseCurrency }); })}>+ Расход</button>
+            {r.taxLines.length > 0 && (
+              <div className="tax-block">
+                <div className="tax-block-title"><Tip text={'Налоги считаются сами по режиму из вкладки «Настройки» и входят в накладные расходы. Здесь их менять нельзя.\n«% с выручки» берётся с оборота, «% с прибыли» с того, что остаётся после ваших накладных расходов, дивиденды с остатка после остальных налогов.'}>Налоги по режиму из «Настроек»</Tip></div>
+                {r.taxLines.map(t => (
+                  <div className="expense-row ovh tax-line" key={t.line.id}>
+                    <span className="tax-name">{t.line.name}</span>
+                    <span className="tax-how">{TAX_BASES.find(b => b[0] === t.line.base)?.[1]}</span>
+                    <span className="tax-how">{t.line.base === 'fixed' ? `${t.line.amount} ${t.line.currency}` : `${t.line.rate} %`}</span>
+                    <span className="exp-sum">{fmt.money(t.amount)}</span>
+                    <span className="exp-sum">{fmt.unit(t.perOrder)}</span>
+                    <span />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -186,7 +202,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
             </div>
           </div>
           <div className="hero">
-            <div className="label"><Tip text="Что остаётся после товара, рекламы и накладных расходов. Налоги пока не учтены.">Чистая прибыль</Tip></div>
+            <div className="label"><Tip text="Что остаётся после товара, рекламы и накладных расходов, включая налоги.">Чистая прибыль</Tip></div>
             <div className={`value ${r.profitAfterOverhead < 0 ? 'neg' : 'c-profit'}`}>{fmt.money(r.profitAfterOverhead)}</div>
             <div className="hero-badges">
               <span className={`hero-badge ${r.profitAfterOverhead < 0 ? 'neg' : ''}`}>{fmt.money(day(r.profitAfterOverhead))} в день</span>
@@ -201,7 +217,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
               {line('Себестоимость', -T.cogs, '', 'cogs')}
               {line('Реклама', -T.ads, '', 'ads')}
               {line(<Tip text="Сколько остаётся после товара и рекламы. Накладные расходы ещё не вычтены.">Прибыль до накладных</Tip>, T.contribution, 'strong', 'contrib')}
-              {line('Накладные расходы', -r.overhead, '', 'overhead')}
+              {line(r.taxes > 0 ? <Tip text={`Свои накладные расходы ${fmt.money(r.overheadOwn)} и налоги ${fmt.money(r.taxes)} по режиму из «Настроек».`}>Накладные расходы</Tip> : 'Накладные расходы', -r.overhead, '', 'overhead')}
               {line('Чистая прибыль', r.profitAfterOverhead, 'total', 'profit')}
             </tbody>
           </table>

@@ -5,12 +5,12 @@ import { switchBaseCurrency } from '../dbOps';
 import { applyMarkup } from '../engine/money';
 import { TAX_PRESETS, taxFromPreset, uid } from '../engine/taxPresets';
 import { fetchMarketRates } from '../fxFetch';
-import { CURRENCIES, type Db, type TaxBase } from '../engine/types';
+import { CURRENCIES, type Db } from '../engine/types';
+import { TAX_BASES } from '../ui/tips';
 import { Card, CurrencySelect, Del, Field, Num, Pair, Select, Text, Tip, Toggle, Unit } from '../ui/kit';
 
 type P = TabProps & { ops: AccountOps };
 
-const BASES: [TaxBase, string][] = [['revenue', '% с выручки'], ['profit', '% с прибыли'], ['dividend', '% когда забираете прибыль'], ['fixed', 'сумма в месяц']];
 const BASES_TIP = (
   <>
     <p><b>% с выручки.</b> Со всех денег от продаж, без НДС.</p>
@@ -94,7 +94,7 @@ export function SettingsTab({ db, mutate, ops }: P) {
           </div>
 
           <div className="group tax-group">
-            <div className="group-title"><Tip text={'Выберите режим, и поля заполнятся сами. Любое поле потом можно поправить.\nЦифры 2026 года. Перед важным решением сверьтесь с бухгалтером.'}>Налоги</Tip></div>
+            <div className="group-title"><Tip text={'Выберите режим, и поля заполнятся сами. Любое поле потом можно поправить.\nНалоги считаются сами и входят в накладные расходы магазина: вкладка «Магазин», внизу накладных.\nЦифры 2026 года. Перед важным решением сверьтесь с бухгалтером.'}>Налоги</Tip></div>
           <div className="row">
       <Field size="xl" label="Режим">
         <select className="input" value={t.presetId} onChange={e => {
@@ -119,7 +119,7 @@ export function SettingsTab({ db, mutate, ops }: P) {
       {t.lines.map((l, i) => (
         <div className="tax-row" key={l.id}>
           <input className="input" value={l.name} onChange={e => mutate(d => { d.settings.tax.lines[i].name = e.target.value; custom(d); })} />
-          <Select value={l.base} options={BASES} onChange={v => mutate(d => { d.settings.tax.lines[i].base = v; custom(d); })} />
+          <Select value={l.base} options={TAX_BASES} onChange={v => mutate(d => { d.settings.tax.lines[i].base = v; custom(d); })} />
           {l.base === 'fixed' ? (
             <Pair>
               <Num value={l.amount} onChange={v => mutate(d => { d.settings.tax.lines[i].amount = v ?? 0; custom(d); })} />

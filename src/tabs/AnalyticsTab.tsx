@@ -68,7 +68,7 @@ function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc |
   const cur = summarize(calc), was = compare && summarize(compare);   // was: текущие значения, с которыми сравнивается прогноз
   const tiles: { key: string; cls?: string; label: string; tip: string; get: (s: Summary) => number; show: (v: number) => string; delta: (v: number) => string }[] = [
     { key: 'revenue', cls: 'c-revenue', label: 'Оборот', tip: 'Деньги за проданные заказы (без НДС, если вы с НДС).', get: s => k(s.revenue), show: fmt.money, delta: fmt.money },
-    { key: 'profit', cls: 'c-profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов. Налоги пока не учтены.', get: s => k(s.profit), show: fmt.money, delta: fmt.money },
+    { key: 'profit', cls: 'c-profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов, включая налоги.', get: s => k(s.profit), show: fmt.money, delta: fmt.money },
     { key: 'margin', cls: 'c-profit', label: 'Рентабельность', tip: 'Какую часть оборота составляет чистая прибыль.', get: s => s.profitMargin, show: v => fmt.pct(v), delta: v => `${v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} п.п.` },
     { key: 'sold', label: 'Продано заказов', tip: 'Заказы, которые клиент забрал и оплатил.', get: s => k(s.sold), show: v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 }), delta: v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) },
     { key: 'perOrder', cls: 'c-profit', label: 'Прибыль с заказа', tip: 'Чистая прибыль, делённая на число проданных заказов.', get: s => s.profitPerOrder, show: fmt.unit, delta: fmt.unit },
@@ -275,12 +275,13 @@ function ByChannels({ calc, k, fmt }: SectionProps) {
 // ---------- накладные расходы ----------
 
 function Overhead({ calc, k, fmt }: SectionProps) {
-  const rows: BarRow[] = calc.overheadLines.map(l => ({
-    name: l.line.name, value: k(l.amount), sub: calc.overhead > 0 ? fmt.pct(l.amount / calc.overhead * 100, 0) : '',
-  })).sort((a, b) => b.value - a.value);
+  const rows: BarRow[] = [
+    ...calc.overheadLines.map(l => ({ name: l.line.name, amount: l.amount })),
+    ...calc.taxLines.map(t => ({ name: `${t.line.name} (налог)`, amount: t.amount })),
+  ].map(l => ({ name: l.name, value: k(l.amount), sub: calc.overhead > 0 ? fmt.pct(l.amount / calc.overhead * 100, 0) : '' })).sort((a, b) => b.value - a.value);
   return (
     <Card ckey="analytics:overhead" title="Накладные расходы"
-      tip="Из чего складываются накладные расходы за выбранный срок. Мелко под суммой: доля расхода в накладных."
+      tip="Из чего складываются накладные расходы за выбранный срок, вместе с налогами. Мелко под суммой: доля расхода в накладных."
       right={<span className="share-left">всего {fmt.money(k(calc.overhead))}</span>}>
       {rows.length ? <Bars rows={rows} fmt={fmt} /> : <div className="empty">Накладных расходов нет. Их можно добавить во вкладке «Магазин».</div>}
     </Card>

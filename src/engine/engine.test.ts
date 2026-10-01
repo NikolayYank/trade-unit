@@ -451,6 +451,7 @@ function storeDb(): Db {
   const db = demoDb();
   db.store.overhead = [];
   db.settings.tax = taxFromPreset('bg_eood'); db.settings.tax.vatPayer = false;
+  db.settings.tax.lines = [];                                  // налогов нет: проверяем чистую арифметику
   const [a, b] = db.channels;
   Object.assign(a, { name: 'A', adMode: 'cpa', cpa: 2, cpaType: 'money', approve: 100, buyout: 100 });
   Object.assign(b, { name: 'B', adMode: 'cpa', cpa: 4, cpaType: 'money', approve: 100, buyout: 100 });
@@ -619,6 +620,51 @@ describe('перенос старого плана магазина', () => {
     const out = normalizeDb(old as never) as unknown as typeof old;
     expect(out.store.sales).toBe(0);
     expect(out.store.items).toEqual([]);
+  });
+});
+
+describe('налоги в накладных расходах', () => {
+  const withTax = (id: string) => { const db = storeDb(); db.settings.tax = { ...taxFromPreset(id), vatPayer: false }; return db; };
+
+  it('ЕООД: 10% с прибыли после своих накладных, затем 5% дивиденд с остатка; всё входит в накладные', () => {
+    const db = withTax('bg_eood');
+    db.store.overhead = [{ id: 'a', name: 'Аренда', kind: 'fixed', amount: 300, currency: 'EUR' }];
+    const r = calcStore(db);
+    const before = r.totals.contribution - 300;                       // прибыль до налогов
+    expect(r.overheadOwn).toBeCloseTo(300, 9);
+    expect(r.taxLines[0].amount).toBeCloseTo(before * 0.1, 9);
+    expect(r.taxLines[1].amount).toBeCloseTo(before * 0.9 * 0.05, 9);
+    expect(r.taxes).toBeCloseTo(before * 0.145, 9);
+    expect(r.overhead).toBeCloseTo(300 + before * 0.145, 9);          // налоги внутри накладных
+    expect(r.profitAfterOverhead).toBeCloseTo(before * (1 - 0.145), 9);
+    expect(r.taxLines[0].perOrder).toBeCloseTo(r.taxLines[0].amount / r.totals.sold, 9);
+  });
+
+  it('ФОП 3 группа: 6% с оборота и ЕСВ фиксированно, не зависят от прибыли', () => {
+    const db = withTax('ua_fop3');
+    const r = calcStore(db);
+    const esv = 1902.34 / 41.5 * 0.86;
+    expect(r.taxes).toBeCloseTo(r.totals.revenue * 0.06 + esv, 6);
+    expect(r.profitAfterOverhead).toBeCloseTo(r.totals.contribution - r.overheadOwn - r.taxes, 9);
+  });
+
+  it('убыток налогом на прибыль и дивидендом не облагается', () => {
+    const db = withTax('bg_eood');
+    db.store.overhead = [{ id: 'a', name: 'Огромный расход', kind: 'fixed', amount: 1e6, currency: 'EUR' }];
+    const r = calcStore(db);
+    expect(r.taxes).toBe(0);
+    expect(r.profitAfterOverhead).toBeLessThan(0);
+  });
+
+  it('без налоговых строк налогов нет, прогноз считает налоги тоже', () => {
+    const db = withTax('bg_eood');
+    const pc = calcAllProducts(db);
+    const base = calcStore(db, pc);
+    db.scenario = { sales: db.store.sales * 2 };
+    const fc = calcForecast(db, pc)!;
+    expect(fc.taxes).toBeGreaterThan(base.taxes);
+    db.settings.tax.lines = [];
+    expect(calcStore(db, pc).taxes).toBe(0);
   });
 });
 

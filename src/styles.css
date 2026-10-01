@@ -594,3 +594,8 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
   .donut { margin: 0 auto }
 }
 @media (max-width: 1360px) { .an-sidebar { max-height: none; overflow: visible; margin: 0; padding: 0 } }
+.tax-block { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 6px }
+.tax-block-title { color: var(--muted); font-size: 11px; font-weight: 650; margin-bottom: 2px }
+.expense-row.tax-line { min-height: 32px }
+.tax-name { font-size: 13px; padding-left: 2px }
+.tax-how { font-size: 12px; color: var(--muted) }

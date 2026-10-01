@@ -195,11 +195,15 @@ contribution        = revenue − cogs − ads
 ```
 overhead              = Σ накладные расходы: сумма в месяц (в основную валюту), % × оборот (totals.revenue)
                         или сумма за штуку × продано (totals.sold)
-profitAfterOverhead   = totals.contribution − overhead
+overheadOwn           = Σ свои накладные расходы (строки выше)
+налоги                = calcTaxes(revenue = totals.revenue, profitBeforeTax = totals.contribution − overheadOwn)
+overhead              = overheadOwn + налоги                  налоги входят в накладные расходы
+profitAfterOverhead   = totals.contribution − overhead        чистая прибыль
 ```
 
-`totals.contribution` — «прибыль до накладных». Налоги в итог магазина пока не входят: расчёт готов в `taxes.ts`
-(`calcTaxes`), но к экрану не подключён.
+`totals.contribution` — «прибыль до накладных». `StoreCalc.taxLines` — налоговые строки (сумма и на один заказ), показываются во вкладке
+«Магазин» под своими накладными (менять их там нельзя, только в «Настройках») и в «Аналитике» в разделе накладных. Налог «в месяц» (`fixed`)
+масштабируется по дням так же, как остальные месячные суммы. Прогноз пересчитывает и налоги.
 
 **Налоги (`taxes.ts`)** считаются в таком порядке (порядок важен):
 1. `revenue` — % от выручки без НДС; и `fixed` — суммы в месяц;

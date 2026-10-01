@@ -2,7 +2,8 @@
 import { approveShare, buyoutShare, orderCtx, orderEconomics, type OrderEconomics } from './channel';
 import { clamp, num, toBase } from './money';
 import { allOffers, calcAllProducts, type Offer, type ProductCalcs } from './offers';
-import type { Channel, Db, Overhead, PlanItem } from './types';
+import { calcTaxes } from './taxes';
+import type { Channel, Db, Overhead, PlanItem, TaxLine } from './types';
 
 /** Суммы по заказам: сколько продано и во что это обошлось. */
 export interface Totals {
@@ -49,9 +50,12 @@ export interface StoreCalc {
   items: ItemResult[];
   channels: { channel: Channel; totals: Totals }[]; // итоги по каналам, до накладных расходов
   totals: Totals;
-  overheadLines: { line: Overhead; amount: number; perOrder: number }[]; // за месяц и в среднем на один проданный заказ
-  overhead: number;
-  profitAfterOverhead: number;
+  overheadLines: { line: Overhead; amount: number; perOrder: number }[]; // свои накладные: за месяц и в среднем на один проданный заказ
+  taxLines: { line: TaxLine; amount: number; perOrder: number }[];      // налоги выбранного режима, они тоже входят в накладные расходы
+  overheadOwn: number;   // только свои накладные, без налогов
+  taxes: number;         // налоги
+  overhead: number;      // все накладные расходы: свои и налоги
+  profitAfterOverhead: number; // чистая прибыль
   period: number;        // дней в периоде плана
 }
 
@@ -106,11 +110,15 @@ export function calcStore(db: Db, pc: ProductCalcs = calcAllProducts(db), patch?
     const amount = overheadAmount(line, totals.revenue, totals.sold, db);
     return { line, amount, perOrder: totals.sold > 0 ? amount / totals.sold : 0 };
   });
-  const overhead = overheadLines.reduce((a, x) => a + x.amount, 0);
+  const overheadOwn = overheadLines.reduce((a, x) => a + x.amount, 0);
+  // налоги считаются от оборота и от прибыли после своих накладных расходов, и входят в накладные
+  const tax = calcTaxes(db, { revenue: totals.revenue, profitBeforeTax: totals.contribution - overheadOwn });
+  const taxLines = tax.taxes.map(t => ({ line: t.line, amount: t.amount, perOrder: totals.sold > 0 ? t.amount / totals.sold : 0 }));
+  const overhead = overheadOwn + tax.total;
   return {
     sales,
     itemsShare: db.store.items.reduce((a, i) => a + clamp(num(i.share), 0, 100), 0),
-    items, channels: db.channels.map(c => ({ channel: c, totals: byChannel.get(c.id)! })), totals, overheadLines, overhead,
+    items, channels: db.channels.map(c => ({ channel: c, totals: byChannel.get(c.id)! })), totals, overheadLines, taxLines, overheadOwn, taxes: tax.total, overhead,
     profitAfterOverhead: totals.contribution - overhead,
     period: Math.max(0, num(db.store.period)),
   };
