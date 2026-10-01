@@ -108,7 +108,7 @@ function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc |
     { key: 'sold', kind: 'num', label: 'Продано заказов', tip: 'Заказы, которые клиент забрал и оплатил.', get: s => k(s.sold), show: dec },
     { key: 'check', kind: 'money', cls: 'c-revenue', label: 'Средний чек', tip: 'Оборот, делённый на число проданных заказов: сколько в среднем приносит один заказ.', get: s => s.avgCheck, show: fmt.unit },
     { key: 'margin', kind: 'pct', cls: 'c-margin', label: 'Маржинальность', tip: 'Какую часть оборота остаётся после себестоимости товара, до рекламы и накладных расходов.', get: s => s.marginPct, show: v => fmt.pct(v) },
-    { key: 'roas', kind: 'x', cls: 'c-ads', label: 'Отдача рекламы', tip: 'Эффективность рекламы (ROAS): сколько оборота приносит каждая единица рекламы. Например, 4× значит: на €1 рекламы приходится €4 оборота. Чем больше, тем лучше.', get: s => s.roas, show: v => `${dec(v)}×` },
+    { key: 'roas', kind: 'x', cls: 'c-ads', label: 'Отдача рекламы', tip: 'Эффективность рекламы (ROAS): сколько оборота приносит каждая единица рекламы. Например, «€4 на €1» значит: на каждый €1 рекламы приходится €4 оборота. Чем больше, тем лучше.', get: s => s.roas, show: v => `${fmt.sym}${dec(v)} на ${fmt.sym}1` },
     { key: 'overhead', kind: 'money', cls: 'c-overhead', label: 'Накладные расходы', tip: 'Все накладные расходы за срок, вместе с налогами.', get: s => k(s.overhead), show: fmt.money, lowerIsBetter: true },
     { key: 'profit', kind: 'money', cls: 'c-profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов, включая налоги.', get: s => k(s.profit), show: fmt.money },
     { key: 'profitMargin', kind: 'pct', cls: 'c-profit', label: 'Рентабельность', tip: 'Какую часть оборота составляет чистая прибыль.', get: s => s.profitMargin, show: v => fmt.pct(v) },
@@ -118,7 +118,7 @@ function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc |
   /** Разница прогноза и текущего значения: у процентов просто плюс или минус столько-то процентов, у денег и чисел сама разница. */
   const diff = (t: Tile, d: number) => {
     const sign = d > 0 ? '+' : '−', a = Math.abs(d);
-    return t.kind === 'money' ? `${sign}${t.show(a)}` : t.kind === 'pct' ? `${sign}${dec(a)}%` : t.kind === 'x' ? `${sign}${dec(a)}×` : `${sign}${dec(a)}`;
+    return t.kind === 'money' ? `${sign}${t.show(a)}` : t.kind === 'pct' ? `${sign}${dec(a)}%` : t.kind === 'x' ? `${sign}${fmt.sym}${dec(a)}` : `${sign}${dec(a)}`;
   };
   return (
     <div className="an-kpis">
