@@ -608,3 +608,5 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .range-pop-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px }
 .range-pop-hint { color: var(--muted); font-size: 11px }
 .range-pop .btn { align-self: flex-end }
+.cur-pick { width: 84px }
+.cur-pick .input { height: 36px; padding: 0 28px 0 10px; font-weight: 600; font-size: 12px }

@@ -5,7 +5,7 @@ import { isPercentAd } from '../engine/channel';
 import { SYMBOLS } from '../engine/money';
 import type { ProductCalcs } from '../engine/offers';
 import { calcStore, forDays, type StoreCalc, type Totals } from '../engine/store';
-import type { ChannelScenario, Currency, Scenario } from '../engine/types';
+import { CURRENCIES, type ChannelScenario, type Currency, type Scenario } from '../engine/types';
 import { Card, CurrencySelect, GroupedInt, makeFmtIn, Note, Num, Segmented, Select, Th, Tip, type Fmt } from '../ui/kit';
 
 type P = TabProps & { fmt: Fmt; pc: ProductCalcs };

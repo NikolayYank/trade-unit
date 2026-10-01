@@ -3,6 +3,7 @@ import { demoDb } from '../demo';
 import { channelFunnel, funnelView, orderCtx, orderEconomics } from './channel';
 import { calcProduct } from './product';
 import { calcAllProducts, kitOffer } from './offers';
+import { displayFactor } from './money';
 import { applyScenario, calcForecast, changePct, profitEffect, rangeDays, rowMetrics, scenarioCount, summarize } from './analytics';
 import { calcStore, forDays, margin, overheadAmount, perDay } from './store';
 import { calcTaxes } from './taxes';
@@ -868,6 +869,16 @@ describe('аналитика и прогноз', () => {
     expect(s.roi).toBeCloseTo(r.profitAfterOverhead / costs * 100, 9);
     const none = summarize(calcStore({ ...demoDb(), store: { ...demoDb().store, sales: 0 } }));
     expect(none).toMatchObject({ avgCheck: 0, marginPct: 0, adReturn: null });   // без продаж и рекламы не делим на ноль
+  });
+
+  it('показ в другой валюте: пересчёт по курсам, данные не меняются', () => {
+    const db = demoDb();                                              // основная EUR, 1 USD = 0,86 EUR, 1 USD = 41,5 UAH
+    const before = JSON.stringify(db);
+    expect(displayFactor(db.settings, 'EUR')).toBeCloseTo(1, 12);
+    expect(displayFactor(db.settings, 'USD')).toBeCloseTo(1 / 0.86, 9);
+    expect(displayFactor(db.settings, 'UAH')).toBeCloseTo(41.5 / 0.86, 9);
+    expect(100 * displayFactor(db.settings, 'UAH') / displayFactor(db.settings, 'USD')).toBeCloseTo(4150, 6);
+    expect(JSON.stringify(db)).toBe(before);
   });
 
   it('показатели строки: деньги и проценты от оборота строки, прибыль с заказа', () => {

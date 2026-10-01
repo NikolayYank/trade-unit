@@ -1,7 +1,7 @@
 // Базовые элементы интерфейса: поля ввода, подсказки, карточки, форматирование.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { SYMBOLS } from '../engine/money';
+import { displayFactor, SYMBOLS } from '../engine/money';
 import { CURRENCIES, type Currency, type Settings } from '../engine/types';
 
 // ---------- форматирование ----------
@@ -30,6 +30,15 @@ export function makeFmt(s: Settings) {
   };
 }
 export type Fmt = ReturnType<typeof makeFmt>;
+
+/**
+ * Форматирование для показа сумм в другой валюте `to`: суммы (они лежат в основной валюте записи) пересчитываются по курсам
+ * из настроек и выводятся с символом `to`. Сами данные и основная валюта не меняются.
+ */
+export function makeFmtIn(s: Settings, to: Currency): Fmt {
+  const f = makeFmt({ ...s, baseCurrency: to }), k = displayFactor(s, to);
+  return { ...f, money: (v, d) => f.money(v * k, d), unit: v => f.unit(v * k), precise: v => f.precise(v * k) };
+}
 
 // ---------- подсказка ----------
 

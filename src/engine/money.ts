@@ -9,6 +9,9 @@ export function toBase(value: number, from: Currency, s: Settings): number {
   return (value / rFrom) * rBase;
 }
 
+/** Во сколько раз надо умножить сумму в основной валюте, чтобы показать её в валюте `to` (только для показа, данные не меняются). */
+export const displayFactor = (s: Settings, to: Currency): number => toBase(1, s.baseCurrency, { ...s, baseCurrency: to });
+
 export const num = (v: unknown): number => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
