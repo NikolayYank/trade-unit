@@ -14,14 +14,16 @@ export function scenarioCount(sc: Scenario | undefined): number {
   const n = (o: object | undefined) => Object.keys(defined(o)).length;
   return n({ sales: sc.sales })
     + Object.values(sc.channels ?? {}).reduce((a, c) => a + n(c), 0)
-    + Object.values(sc.offers ?? {}).reduce((a, o) => a + n(o), 0);
+    + Object.values(sc.offers ?? {}).reduce((a, o) => a + n(o), 0)
+    + Object.values(sc.overhead ?? {}).reduce((a, o) => a + n(o), 0);
 }
 
 /** База с подменёнными значениями прогноза и подмена цен и себестоимости позиций. Исходная база не меняется. */
 export function applyScenario(db: Db, sc: Scenario | undefined): { db: Db; patch: OfferPatch } {
   const channels = db.channels.map(c => ({ ...c, ...defined<ChannelScenario>(sc?.channels?.[c.id]) }));
   const sales = sc?.sales;
-  const store = typeof sales === 'number' && Number.isFinite(sales) ? { ...db.store, sales } : db.store;
+  const overhead = db.store.overhead.map(o => ({ ...o, ...defined(sc?.overhead?.[o.id]) }));
+  const store = { ...db.store, overhead, ...(typeof sales === 'number' && Number.isFinite(sales) ? { sales } : {}) };
   const patch: OfferPatch = {};
   for (const [ref, o] of Object.entries(sc?.offers ?? {})) patch[ref] = defined(o);
   return { db: { ...db, channels, store }, patch };

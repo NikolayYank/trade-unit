@@ -149,11 +149,14 @@ export interface Settings {
 export interface ChannelScenario { cpm?: number; ctr?: number; cr?: number; cpa?: number; cpaPercent?: number; approve?: number; buyout?: number }
 /** Цена и себестоимость позиции в прогнозе (основная валюта). */
 export interface OfferScenario { price?: number; unitCost?: number }
+/** Накладный расход в прогнозе: сумма (в его валюте; для «сумма в месяц» и «за штуку») или процент от оборота. */
+export interface OverheadScenario { amount?: number; percent?: number }
 /** Прогноз: что будет, если эти значения станут другими. Настоящие данные не меняются. */
 export interface Scenario {
   sales?: number;
   channels?: Record<string, ChannelScenario>;   // по id канала
   offers?: Record<string, OfferScenario>;        // по ссылке позиции: p:id или k:id
+  overhead?: Record<string, OverheadScenario>;   // по id накладного расхода
 }
 
 export interface Db {

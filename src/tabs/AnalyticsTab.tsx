@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { TabProps } from '../App';
 import { calcForecast, changePct, rowMetrics, scenarioCount, summarize, type Summary } from '../engine/analytics';
 import { isPercentAd } from '../engine/channel';
+import { SYMBOLS } from '../engine/money';
 import type { ProductCalcs } from '../engine/offers';
 import { calcStore, forDays, type StoreCalc, type Totals } from '../engine/store';
 import type { ChannelScenario } from '../engine/types';
@@ -321,58 +322,96 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
     const o = (((d.scenario ??= {}).offers ??= {})[ref] ??= {});
     if (v === null) delete o[key]; else o[key] = v;
   });
+  const setOverhead = (id: string, key: 'amount' | 'percent', v: number | null) => mutate(d => {
+    const o = (((d.scenario ??= {}).overhead ??= {})[id] ??= {});
+    if (v === null) delete o[key]; else o[key] = v;
+  });
 
   const items = base.items.filter(x => x.offer);
+  const columns = (
+    <div className={`lever head ${editable ? '' : 'plain'}`}><span>Показатель</span><span className="r">Сейчас</span>{editable && <><span className="r">Прогноз</span><span className="r">Изменение</span></>}</div>
+  );
+  const none = (text: string) => <div className="empty">{text}</div>;
+
   return (
-    <Card ckey="analytics:levers" title={editable ? 'Что можно менять' : 'Показатели'}
-      tip={editable
-        ? 'Главные показатели, на которые вы влияете. В колонке «Сейчас» настоящее значение из ваших данных, оно не меняется.\nВ колонке «Прогноз» впишите, каким оно может стать: вся аналитика слева пересчитается. Пустое поле значит «как сейчас».\nКнопка «Сбросить» очищает прогноз целиком.'
-        : 'Главные показатели, на которые вы влияете, с их настоящими значениями. Чтобы прикинуть, что будет при других значениях, переключитесь на «Прогноз» вверху страницы.'}
-      right={editable && count > 0 ? <button className="btn" onClick={() => mutate(d => { delete d.scenario; })}>Сбросить · {count}</button> : undefined}>
-      <div className={`lever head ${editable ? '' : 'plain'}`}><span>Показатель</span><span className="r">Сейчас</span>{editable && <><span className="r">Прогноз</span><span className="r">Изменение</span></>}</div>
-      <div className="lever-scroll">
+    <>
+      <Card ckey="analytics:levers" title={editable ? 'Что можно менять' : 'Показатели'}
+        tip={editable
+          ? 'Главные показатели, на которые вы влияете. В колонке «Сейчас» настоящее значение из ваших данных, оно не меняется.\nВ колонке «Прогноз» впишите, каким оно может стать: вся аналитика слева пересчитается. Пустое поле значит «как сейчас».\nКнопка «Сбросить» очищает прогноз целиком.'
+          : 'Главные показатели, на которые вы влияете, с их настоящими значениями. Чтобы прикинуть, что будет при других значениях, переключитесь на «Прогноз» вверху страницы.'}
+        right={editable && count > 0 ? <button className="btn" onClick={() => mutate(d => { delete d.scenario; })}>Сбросить · {count}</button> : undefined}>
+        {columns}
         <div className="lever-box">
           <div className="lever-group">План</div>
           <Lever editable={editable} label="Продаж за период" tip="Сколько заказов продаётся за период плана." now={db.store.sales} show={fmt.int} value={sc?.sales}
             onChange={setSales} suffix="шт." />
         </div>
+      </Card>
 
-        {db.channels.map(c => {
-          const v = sc?.channels?.[c.id] ?? {};
-          const percent = isPercentAd(c);
-          const set = (key: keyof ChannelScenario) => (x: number | null) => setChannel(c.id, key, x);
-          return (
-            <div className="lever-box" key={c.id}>
-              <div className="lever-group">{c.name}</div>
-              {c.adMode === 'funnel' ? <>
-                <Lever editable={editable} label="CPM" tip="Цена за 1000 показов рекламы." now={c.cpm} show={fmt.precise} value={v.cpm} onChange={set('cpm')} suffix={fmt.sym} />
-                <Lever editable={editable} label="CTR" tip="Сколько процентов увидевших рекламу нажимают на неё." now={c.ctr} show={fmt.pct} value={v.ctr} onChange={set('ctr')} suffix="%" bounds={pct} />
-                <Lever editable={editable} label="Конверсия" tip="Сколько процентов зашедших на сайт оформляют заказ." now={c.cr} show={fmt.pct} value={v.cr} onChange={set('cr')} suffix="%" bounds={pct} />
-              </> : percent ? (
-                <Lever editable={editable} label="Процент" tip="Процент от оборота, который забирает канал." now={c.cpaPercent ?? 0} show={fmt.pct} value={v.cpaPercent} onChange={set('cpaPercent')} suffix="%" bounds={pct} />
-              ) : (
-                <Lever editable={editable} label="Реклама за заказ" tip="Сколько стоит один оформленный заказ." now={c.cpa} show={fmt.unit} value={v.cpa} onChange={set('cpa')} suffix={fmt.sym} />
-              )}
-              {!percent && <>
-                <Lever editable={editable} label="Апрув" tip="Какая часть заказов подтверждается." now={c.approve ?? 100} show={fmt.pct} value={v.approve} onChange={set('approve')} suffix="%" bounds={pct} />
-                <Lever editable={editable} label="Выкуп" tip="Какая часть посылок забирается клиентами." now={c.buyout ?? 100} show={fmt.pct} value={v.buyout} onChange={set('buyout')} suffix="%" bounds={pct} />
-              </>}
-            </div>
-          );
-        })}
+      <Card ckey="analytics:levers-items" title="Товары и наборы"
+        tip="Цена продажи и себестоимость каждой позиции из плана магазина. Так видно, что даст скидка, подорожание или более дешёвая закупка.">
+        {items.length === 0 ? none('Позиций в плане нет. Добавьте их во вкладке «Магазин».') : <>
+          {columns}
+          {items.map(x => {
+            const ref = x.item.offer, v = sc?.offers?.[ref] ?? {};
+            return (
+              <div className="lever-box" key={x.item.id}>
+                <div className="lever-group">{x.offer!.name}</div>
+                <Lever editable={editable} label="Цена" tip="Цена продажи за штуку." now={x.offer!.price} show={fmt.unit} value={v.price} onChange={n => setOffer(ref, 'price', n)} suffix={fmt.sym} />
+                <Lever editable={editable} label="Себестоимость" tip="Во сколько обходится одна штука." now={x.offer!.unitCost} show={fmt.unit} value={v.unitCost} onChange={n => setOffer(ref, 'unitCost', n)} suffix={fmt.sym} />
+              </div>
+            );
+          })}
+        </>}
+      </Card>
 
-        {items.map(x => {
-          const ref = x.item.offer, v = db.scenario?.offers?.[ref] ?? {};
-          return (
-            <div className="lever-box" key={x.item.id}>
-              <div className="lever-group">{x.offer!.name}</div>
-              <Lever editable={editable} label="Цена" tip="Цена продажи за штуку." now={x.offer!.price} show={fmt.unit} value={v.price} onChange={n => setOffer(ref, 'price', n)} suffix={fmt.sym} />
-              <Lever editable={editable} label="Себестоимость" tip="Во сколько обходится одна штука." now={x.offer!.unitCost} show={fmt.unit} value={v.unitCost} onChange={n => setOffer(ref, 'unitCost', n)} suffix={fmt.sym} />
-            </div>
-          );
-        })}
-        {!db.channels.length && !items.length && <div className="empty">Добавьте каналы и позиции, и здесь появятся показатели.</div>}
-      </div>
-    </Card>
+      <Card ckey="analytics:levers-channels" title="Каналы продаж"
+        tip="Реклама и воронка каждого канала: цена показов, клики, заказы, апрув и выкуп. Так видно, что даст более дешёвая реклама или лучший апрув.">
+        {db.channels.length === 0 ? none('Каналов нет. Добавьте их во вкладке «Каналы продаж».') : <>
+          {columns}
+          {db.channels.map(c => {
+            const v = sc?.channels?.[c.id] ?? {};
+            const percent = isPercentAd(c);
+            const set = (key: keyof ChannelScenario) => (x: number | null) => setChannel(c.id, key, x);
+            return (
+              <div className="lever-box" key={c.id}>
+                <div className="lever-group">{c.name}</div>
+                {c.adMode === 'funnel' ? <>
+                  <Lever editable={editable} label="CPM" tip="Цена за 1000 показов рекламы." now={c.cpm} show={fmt.precise} value={v.cpm} onChange={set('cpm')} suffix={fmt.sym} />
+                  <Lever editable={editable} label="CTR" tip="Сколько процентов увидевших рекламу нажимают на неё." now={c.ctr} show={fmt.pct} value={v.ctr} onChange={set('ctr')} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="Конверсия" tip="Сколько процентов зашедших на сайт оформляют заказ." now={c.cr} show={fmt.pct} value={v.cr} onChange={set('cr')} suffix="%" bounds={pct} />
+                </> : percent ? (
+                  <Lever editable={editable} label="Процент" tip="Процент от оборота, который забирает канал." now={c.cpaPercent ?? 0} show={fmt.pct} value={v.cpaPercent} onChange={set('cpaPercent')} suffix="%" bounds={pct} />
+                ) : (
+                  <Lever editable={editable} label="Реклама за заказ" tip="Сколько стоит один оформленный заказ." now={c.cpa} show={fmt.unit} value={v.cpa} onChange={set('cpa')} suffix={fmt.sym} />
+                )}
+                {!percent && <>
+                  <Lever editable={editable} label="Апрув" tip="Какая часть заказов подтверждается." now={c.approve ?? 100} show={fmt.pct} value={v.approve} onChange={set('approve')} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="Выкуп" tip="Какая часть посылок забирается клиентами." now={c.buyout ?? 100} show={fmt.pct} value={v.buyout} onChange={set('buyout')} suffix="%" bounds={pct} />
+                </>}
+              </div>
+            );
+          })}
+        </>}
+      </Card>
+
+      <Card ckey="analytics:levers-overhead" title="Накладные расходы"
+        tip={'Каждый накладной расход из вкладки «Магазин»: сумма в месяц, процент от оборота или сумма за штуку, как он там задан. Так видно, что даст более дешёвый склад, курьер или эквайринг.\nСуммы указываются в валюте самого расхода.'}>
+        {db.store.overhead.length === 0 ? none('Накладных расходов нет. Добавьте их во вкладке «Магазин».') : <>
+          {columns}
+          <div className="lever-box">
+            {db.store.overhead.map(o => {
+              const kind = o.kind ?? 'fixed', v = sc?.overhead?.[o.id] ?? {};
+              const sym = SYMBOLS[o.currency].trim();
+              if (kind === 'percent') {
+                return <Lever editable={editable} key={o.id} label={o.name} tip="Процент от оборота." now={o.percent ?? 0} show={fmt.pct} value={v.percent} onChange={n => setOverhead(o.id, 'percent', n)} suffix="%" bounds={pct} />;
+              }
+              const money = (x: number) => `${x.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${sym}`;
+              return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'perUnit' ? 'Сумма за каждую проданную штуку.' : 'Сумма в месяц.'} now={o.amount} show={money} value={v.amount} onChange={n => setOverhead(o.id, 'amount', n)} suffix={sym} />;
+            })}
+          </div>
+        </>}
+      </Card>
+    </>
   );
 }

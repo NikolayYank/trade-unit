@@ -215,7 +215,7 @@ profitAfterOverhead   = totals.contribution − overhead
 `StoreCalc.channels` — итоги по каналам до накладных (накладные по каналам не делятся).
 
 **Прогноз** хранится в `Db.scenario` (необязательно): `sales`, `channels[id]` (`cpm`, `ctr`, `cr`, `cpa`, `cpaPercent`, `approve`, `buyout`),
-`offers[ref]` (`price`, `unitCost`). Нет ключа — значение настоящее. `applyScenario` делает копию базы с подменой, цену и себестоимость
+`offers[ref]` (`price`, `unitCost`), `overhead[id]` (`amount` в валюте самого расхода или `percent`). Нет ключа — значение настоящее. `applyScenario` делает копию базы с подменой, цену и себестоимость
 позиций передаёт в `calcStore(db, pc, patch)`; `calcForecast` возвращает `null`, если подмен нет. Настоящие данные не меняются, «Сбросить» удаляет `scenario`.
 Денежные значения прогноза (`cpm`, `cpa`, цена, себестоимость) лежат в основной валюте и пересчитываются в `switchBaseCurrency`.
 
@@ -291,7 +291,7 @@ profitAfterOverhead   = totals.contribution − overhead
 **Новая вкладка.** Запись в `TABS` и ветка рендера в `App.tsx`, компонент в `src/tabs/`. Данные брать из `db`,
 править через `mutate`, считать через `engine/`.
 
-**Новый рычаг прогноза.** Ключ в `ChannelScenario` или `OfferScenario` (`types.ts`), строка `Lever` в `AnalyticsTab.tsx`, при необходимости подмена в `applyScenario` и тест. Денежное значение добавить в `switchBaseCurrency`.
+**Новый рычаг прогноза.** Ключ в `ChannelScenario`, `OfferScenario` или `OverheadScenario` (`types.ts`), строка `Lever` в нужной области панели справа (`Levers` в `AnalyticsTab.tsx`: «План», «Товары и наборы», «Каналы продаж», «Накладные расходы»), при необходимости подмена в `applyScenario` и тест. Денежное значение добавить в `switchBaseCurrency`.
 
 **Новый показатель в итоге месяца.** Поле в `Totals` или `StoreCalc` и расчёт в `calcStore` (`store.ts`), тест, вывод в `StoreTab.tsx`.
 

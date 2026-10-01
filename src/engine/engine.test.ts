@@ -684,6 +684,23 @@ describe('аналитика и прогноз', () => {
     expect(calcForecast(db, pc)!.totals.ads).toBeGreaterThan(base.totals.ads);   // больше оформленных на те же продажи
   });
 
+  it('прогноз накладных расходов: сумма, процент и сумма за штуку, в валюте самого расхода', () => {
+    const db = storeDb();
+    db.store.overhead = [
+      { id: 'a', name: 'Аренда', kind: 'fixed', amount: 300, currency: 'EUR' },
+      { id: 'b', name: 'Эквайринг', kind: 'percent', amount: 0, currency: 'EUR', percent: 2 },
+      { id: 'c', name: 'Курьер', kind: 'perUnit', amount: 3, currency: 'EUR' },
+    ];
+    const pc = calcAllProducts(db);
+    const base = calcStore(db, pc);
+    db.scenario = { overhead: { a: { amount: 100 }, b: { percent: 4 }, c: { amount: 2 } } };
+    expect(scenarioCount(db.scenario)).toBe(3);
+    const fc = calcForecast(db, pc)!;
+    expect(fc.overheadLines.map(l => l.amount)).toEqual([100, base.totals.revenue * 0.04, 2 * base.totals.sold]);
+    expect(fc.totals.revenue).toBeCloseTo(base.totals.revenue, 9);      // на оборот не влияет
+    expect(db.store.overhead[0].amount).toBe(300);                       // настоящие данные целы
+  });
+
   it('сброс прогноза возвращает базовый расчёт', () => {
     const db = storeDb();
     const pc = calcAllProducts(db);
