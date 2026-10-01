@@ -28,6 +28,7 @@ export function emptyDb(): Db {
       baseCurrency: 'USD',
       fx: { USD: 1, EUR: 0, CNY: 0, UAH: 0, UZS: 0 },
       fxUpdated: '',
+      cpmInUsd: true,
       tax: emptyTax(),
     },
     products: [], kits: [], channels: [],
@@ -70,7 +71,7 @@ export function demoDb(): Db {
   const kitGift = { id: uid(), name: 'Подарочный: полотенце + спрей + аромат', items: [{ productId: towel.id, qty: 1 }, { productId: spray.id, qty: 1 }, { productId: scent.id, qty: 1 }], packCost: 1.5, price: 29 };
   const kitB2b = { id: uid(), name: 'Опт: 10 полотенец', items: [{ productId: towel.id, qty: 10 }], packCost: 0, price: 55 };
 
-  const fb: Channel = { ...newChannel(), name: 'Facebook / Instagram', adMode: 'funnel', cpm: 3, ctr: 2, cr: 3, approve: 85, buyout: 88 };
+  const fb: Channel = { ...newChannel(), name: 'Facebook / Instagram', adMode: 'funnel', cpm: 3.5, ctr: 2, cr: 3, approve: 85, buyout: 88 };
   const google: Channel = { ...newChannel(), name: 'Google Ads', adMode: 'cpa', cpa: 7, approve: 90, buyout: 95 };
   const market: Channel = { ...newChannel(), name: 'Маркетплейс', adMode: 'cpa', cpaType: 'percent', cpaPercent: 12, approve: 100, buyout: 100 };
   const b2b: Channel = { ...newChannel(), name: 'B2B / опт', adMode: 'cpa', cpa: 0, approve: 100, buyout: 100 };
@@ -81,6 +82,7 @@ export function demoDb(): Db {
       baseCurrency: 'EUR',
       fx: { USD: 1, EUR: 0.86, CNY: 7.15, UAH: 41.5, UZS: 12100 },
       fxUpdated: 'пример, обновите перед расчётом',
+      cpmInUsd: true,
       tax: taxFromPreset('bg_eood'),
     },
     products,

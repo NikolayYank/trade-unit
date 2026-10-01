@@ -13,12 +13,11 @@ export function switchBaseCurrency(db: Db, to: Currency) {
   db.products.forEach(p => { p.price = r(p.price); });
   db.kits.forEach(kit => { kit.price = r(kit.price); kit.packCost = r(kit.packCost); });
   db.channels.forEach(c => {
-    c.cpa = r(c.cpa); c.cpm = r(c.cpm);
+    c.cpa = r(c.cpa);   // CPM в долларах, от основной валюты не зависит
   });
   const sc = db.scenario;
   if (sc) {
     Object.values(sc.channels ?? {}).forEach(c => {
-      if (c.cpm !== undefined) c.cpm = r(c.cpm);
       if (c.cpa !== undefined) c.cpa = r(c.cpa);
     });
     Object.values(sc.offers ?? {}).forEach(o => {

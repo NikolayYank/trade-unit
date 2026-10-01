@@ -328,6 +328,7 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
     if (v === null) delete o[key]; else o[key] = v;
   });
 
+  const usd = (v: number) => `$${v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;   // CPM всегда в долларах
   const items = base.items.filter(x => x.offer);
   const columns = (
     <div className={`lever head ${editable ? '' : 'plain'}`}><span>Показатель</span><span className="r">Сейчас</span>{editable && <><span className="r">Прогноз</span><span className="r">Изменение</span></>}</div>
@@ -378,7 +379,7 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
               <div className="lever-box" key={c.id}>
                 <div className="lever-group">{c.name}</div>
                 {c.adMode === 'funnel' ? <>
-                  <Lever editable={editable} label="CPM" tip="Цена за 1000 показов рекламы." now={c.cpm} show={fmt.precise} value={v.cpm} onChange={set('cpm')} suffix={fmt.sym} />
+                  <Lever editable={editable} label="CPM" tip="Цена за 1000 показов рекламы, всегда в долларах." now={c.cpm} show={usd} value={v.cpm} onChange={set('cpm')} suffix="$" />
                   <Lever editable={editable} label="CTR" tip="Сколько процентов увидевших рекламу нажимают на неё." now={c.ctr} show={fmt.pct} value={v.ctr} onChange={set('ctr')} suffix="%" bounds={pct} />
                   <Lever editable={editable} label="Конверсия" tip="Сколько процентов зашедших на сайт оформляют заказ." now={c.cr} show={fmt.pct} value={v.cr} onChange={set('cr')} suffix="%" bounds={pct} />
                 </> : percent ? (

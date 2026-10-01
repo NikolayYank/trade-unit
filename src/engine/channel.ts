@@ -1,5 +1,5 @@
 // Канал продаж: стоимость рекламы на оформленный заказ и экономика одного заказа.
-import { clamp, num } from './money';
+import { clamp, num, toBase } from './money';
 import type { Channel, Db } from './types';
 
 export interface Funnel {
@@ -9,12 +9,15 @@ export interface Funnel {
   clicksPerOrder: number;
 }
 
-/** Реклама на один оформленный заказ. Для воронки: CPC = CPM / (1000 × CTR), CPA = CPC / CR. */
-export function channelFunnel(c: Channel): Funnel {
+/**
+ * Реклама на один оформленный заказ в основной валюте. Для воронки: CPC = CPM / (1000 × CTR), CPA = CPC / CR.
+ * CPM хранится в долларах, `usdToBase` переводит его в основную валюту (1, если основная валюта доллар).
+ */
+export function channelFunnel(c: Channel, usdToBase: number): Funnel {
   if (c.adMode === 'cpa') return { cpc: 0, cpa: Math.max(0, num(c.cpa)), impressionsPerOrder: 0, clicksPerOrder: 0 };
   const ctr = num(c.ctr) / 100, cr = num(c.cr) / 100;
   if (ctr <= 0 || cr <= 0) return { cpc: 0, cpa: 0, impressionsPerOrder: 0, clicksPerOrder: 0 };
-  const cpc = num(c.cpm) / (1000 * ctr);
+  const cpc = num(c.cpm) * usdToBase / (1000 * ctr);
   const clicksPerOrder = 1 / cr;
   return { cpc, cpa: cpc * clicksPerOrder, impressionsPerOrder: clicksPerOrder / ctr, clicksPerOrder };
 }
@@ -32,11 +35,14 @@ export const approveShare = (c: Channel): number => isPercentAd(c) ? 1 : clamp(c
 export const buyoutShare = (c: Channel): number => isPercentAd(c) ? 1 : clamp(c.buyout === undefined ? 100 : num(c.buyout), 0, 100) / 100;
 
 /** Налоги, нужные для оборота: плательщик НДС и ставка. */
-export interface OrderCtx { vatPayer: boolean; vatRate: number }
+export interface OrderCtx { vatPayer: boolean; vatRate: number; usdToBase: number }
+
+/** Сколько в основной валюте стоит один доллар. */
+export const usdToBase = (db: Db): number => toBase(1, 'USD', db.settings);
 
 export function orderCtx(db: Db): OrderCtx {
   const t = db.settings.tax;
-  return { vatPayer: t.vatPayer, vatRate: num(t.vatRate) };
+  return { vatPayer: t.vatPayer, vatRate: num(t.vatRate), usdToBase: usdToBase(db) };
 }
 
 export interface FunnelPer1000 {
@@ -48,12 +54,12 @@ export interface FunnelPer1000 {
  * Что получается из 1000 показов: клики (CTR), оформленные заказы (конверсия сайта), подтверждённые (апрув),
  * забранные (выкуп). Для канала с известной ценой заказа (adMode = cpa) показы и клики не считаются.
  */
-export function funnelPer1000(c: Channel): FunnelPer1000 {
+export function funnelPer1000(c: Channel, usdToBase: number): FunnelPer1000 {
   const clicks = 1000 * num(c.ctr) / 100;
   const orders = clicks * num(c.cr) / 100;
   const approved = orders * approveShare(c);
   const sold = approved * buyoutShare(c);
-  const cpa = channelFunnel(c).cpa;
+  const cpa = channelFunnel(c, usdToBase).cpa;
   const conv = approveShare(c) * buyoutShare(c); // доля оформленных заказов, которые дойдут до покупки
   return { impressions: 1000, clicks, orders, approved, sold, costPerSold: conv > 0 ? cpa / conv : null };
 }
@@ -73,13 +79,13 @@ export interface FunnelStage {
  * «По воронке рекламы»: шаги — показы, клики, заказы, подтверждённые, проданный. «По готовой цене»: показов и кликов нет,
  * шаги — заказы, подтверждённые, проданный.
  */
-export function funnelView(c: Channel, sold = 1): { stages: FunnelStage[]; total: number | null } {
+export function funnelView(c: Channel, usdToBase: number, sold = 1): { stages: FunnelStage[]; total: number | null } {
   const a = approveShare(c), b = buyoutShare(c);
   let budget: number, base: [FunnelStage['key'], number][];
   if (c.adMode === 'funnel') {
     // считаем от 1000 показов: реклама на них = CPM
-    const f = funnelPer1000(c);
-    budget = num(c.cpm);
+    const f = funnelPer1000(c, usdToBase);
+    budget = num(c.cpm) * usdToBase;
     base = [['impressions', f.impressions], ['clicks', f.clicks], ['orders', f.orders], ['approved', f.approved], ['sold', f.sold]];
   } else {
     // считаем от 100 оформленных заказов: реклама на них = 100 × CPA
@@ -121,6 +127,6 @@ export function orderEconomics(
   const revenue = ctx.vatPayer ? gross / (1 + ctx.vatRate / 100) : gross;
   const cogs = delivered * unitCost;
   // процент берётся от суммы, которую заплатили клиенты за забранные заказы; сумма за заказ платится за каждый оформленный
-  const ads = isPercentAd(c) ? gross * num(c.cpaPercent) / 100 : placed * channelFunnel(c).cpa;
+  const ads = isPercentAd(c) ? gross * num(c.cpaPercent) / 100 : placed * channelFunnel(c, ctx.usdToBase).cpa;
   return { placed, delivered, gross, revenue, cogs, ads, contribution: revenue - cogs - ads };
 }

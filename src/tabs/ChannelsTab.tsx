@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import type { TabProps } from '../App';
 import { deleteChannel } from '../dbOps';
 import { newChannel } from '../demo';
-import { funnelView, isPercentAd, type FunnelStage } from '../engine/channel';
+import { funnelView, isPercentAd, usdToBase, type FunnelStage } from '../engine/channel';
 import type { AdMode, Channel } from '../engine/types';
 import { Card, Del, Field, GroupedInt, Num, Pair, Segmented, Tip, UnitToggle, type Fmt } from '../ui/kit';
 
@@ -51,7 +51,7 @@ function ChannelCard({ c, db, mutate, fmt }: { c: Channel } & Omit<P, 'setDb'>) 
   // Для скольких проданных заказов считаем воронку. Пусто или ноль — для одного.
   const [want, setWant] = useState<number | null>(1);
   const sales = want !== null && want > 0 ? want : 1;
-  const view = funnelView(c, sales);
+  const view = funnelView(c, usdToBase(db), sales);
   const percent = isPercentAd(c);
   const approve = c.approve ?? 100;
   const buyout = c.buyout ?? 100;
@@ -82,8 +82,8 @@ function ChannelCard({ c, db, mutate, fmt }: { c: Channel } & Omit<P, 'setDb'>) 
                 </Field>
               </div>
             ) : <>
-              <Field size="fill" label="CPM" tip="Сколько стоит, чтобы рекламу увидели 1000 раз: цена за 1000 показов.">
-                <Num value={c.cpm} onChange={v => set(x => { x.cpm = v ?? 0; })} suffix={sym} />
+              <Field size="fill" label="CPM" tip={'Сколько стоит, чтобы рекламу увидели 1000 раз: цена за 1000 показов.\nВсегда в долларах, какая бы ни была основная валюта. В воронке и расчётах пересчитывается в основную валюту сам.'}>
+                <Num value={c.cpm} onChange={v => set(x => { x.cpm = v ?? 0; })} suffix="$" />
               </Field>
               <Field size="fill" label="CTR" tip={'Из 100 человек, которые увидели рекламу, сколько нажали на неё.\nНапример, 10%: из 1000 показов будет 100 кликов.'}>
                 <Num value={c.ctr} step={0.1} onChange={v => set(x => { x.ctr = v ?? 0; })} suffix="%" />

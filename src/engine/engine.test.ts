@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { demoDb } from '../demo';
-import { channelFunnel, orderEconomics } from './channel';
+import { channelFunnel, funnelView, orderCtx, orderEconomics } from './channel';
 import { calcProduct } from './product';
 import { calcAllProducts, kitOffer } from './offers';
 import { applyScenario, calcForecast, changePct, rowMetrics, scenarioCount, summarize } from './analytics';
@@ -17,7 +17,7 @@ const v2Settings = (vatPayer: boolean) => {
   return db;
 };
 
-const CTX = { vatPayer: false, vatRate: 20 };
+const CTX = { vatPayer: false, vatRate: 20, usdToBase: 1 };   // доллар = основная валюте, CPM переводить не надо
 
 describe('себестоимость товара', () => {
   it('совпадает с эталонными цифрами исходного калькулятора (v2) на демо-полотенце (плательщик НДС)', () => {
@@ -49,9 +49,45 @@ describe('себестоимость товара', () => {
 
 describe('канал', () => {
   it('воронка: CPM 3, CTR 2%, CR 3% → CPC 0.15, CPA 5', () => {
-    const f = channelFunnel(demoDb().channels[0]);
+    const f = channelFunnel({ ...demoDb().channels[0], cpm: 3 }, 1);
     expect(f.cpc).toBeCloseTo(0.15, 9);
     expect(f.cpa).toBeCloseTo(5, 9);
+  });
+
+  it('CPM всегда в долларах: воронка пересчитывает его в основную валюту по курсу', () => {
+    const ch = { ...demoDb().channels[0], cpm: 3 };
+    const f = channelFunnel(ch, 0.86);                                  // 1 USD = 0,86 EUR
+    expect(f.cpc).toBeCloseTo(0.15 * 0.86, 9);
+    expect(f.cpa).toBeCloseTo(5 * 0.86, 9);
+    const v = funnelView(ch, 0.86, 1);                                  // цена показа в основной валюте
+    expect(v.stages[0].cost).toBeCloseTo(3 * 0.86 / 1000, 12);
+    const db = demoDb();                                                // база в евро, курс 0,86
+    const e = orderEconomics(100, 20, 5, { ...ch, approve: 100, buyout: 100 }, orderCtx(db));
+    expect(e.ads).toBeCloseTo(100 * 5 * 0.86, 6);
+  });
+
+  it('смена основной валюты не меняет CPM и не меняет результат', async () => {
+    const { switchBaseCurrency } = await import('../dbOps');
+    const db = demoDb();
+    const cpm = db.channels[0].cpm, before = calcStore(db).profitAfterOverhead / 0.86;   // в долларах
+    switchBaseCurrency(db, 'USD');
+    expect(db.channels[0].cpm).toBe(cpm);
+    expect(calcStore(db).profitAfterOverhead).toBeCloseTo(before, 0);      // допуск: при смене валюты суммы округляются до копеек
+  });
+
+  it('старые данные: CPM был в основной валюте, переводится в доллары один раз', async () => {
+    const { normalizeDb } = await import('../storage');
+    const db = demoDb();
+    delete db.settings.cpmInUsd;
+    db.channels[0].cpm = 3;                                             // было 3 евро
+    db.scenario = { channels: { [db.channels[0].id]: { cpm: 4.3 } } };  // 4,3 евро в прогнозе
+    normalizeDb(db);
+    expect(db.channels[0].cpm).toBeCloseTo(3 / 0.86, 2);                // 3,49 доллара
+    expect(db.scenario.channels![db.channels[0].id].cpm).toBeCloseTo(5, 2);
+    expect(db.settings.cpmInUsd).toBe(true);
+    const once = JSON.stringify(db);
+    normalizeDb(db);
+    expect(JSON.stringify(db)).toBe(once);                              // повторный вызов ничего не меняет
   });
 
   it('невыкуп: товар и деньги только за выкупленные заказы', () => {
@@ -277,7 +313,7 @@ describe('апрув и воронка на 1000 показов', () => {
   it('пример: 10% кликают, 5% оформляют → из 1000 показов 100 кликов и 5 заказов', async () => {
     const { funnelPer1000 } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'funnel' as const, cpm: 10, ctr: 10, cr: 5, approve: 100, buyout: 100 };
-    const f = funnelPer1000(ch);
+    const f = funnelPer1000(ch, 1);
     expect(f.clicks).toBeCloseTo(100, 9);
     expect(f.orders).toBeCloseTo(5, 9);
     expect(f.costPerSold!).toBeCloseTo(10 / 5, 9); // 1000 показов стоят 10, заказов 5 → заказ 2
@@ -287,7 +323,7 @@ describe('апрув и воронка на 1000 показов', () => {
   it('апрув и невыкуп удорожают проданный заказ', async () => {
     const { funnelPer1000 } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'funnel' as const, cpm: 10, ctr: 10, cr: 5, approve: 80, buyout: 80 };
-    const f = funnelPer1000(ch); // подтверждают 80%, забирают 80%
+    const f = funnelPer1000(ch, 1); // подтверждают 80%, забирают 80%
     expect(f.approved).toBeCloseTo(4, 9);
     expect(f.sold).toBeCloseTo(3.2, 9);
     expect(f.costPerSold!).toBeCloseTo(10 / 3.2, 9);
@@ -303,7 +339,7 @@ describe('апрув и воронка на 1000 показов', () => {
   it('нулевой апрув не ломает расчёт', async () => {
     const { funnelPer1000 } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'funnel' as const, cpm: 10, ctr: 10, cr: 5, approve: 0, buyout: 100 };
-    expect(funnelPer1000(ch).costPerSold).toBeNull();
+    expect(funnelPer1000(ch, 1).costPerSold).toBeNull();
     expect(orderEconomics(100, 20, 5, ch, CTX).delivered).toBe(0);
   });
 });
@@ -346,8 +382,8 @@ describe('выкуп канала', () => {
     const { funnelPer1000 } = await import('./channel');
     const a = { ...demoDb().channels[0], adMode: 'cpa' as const, cpa: 4, approve: 100, buyout: 100 };
     const b = { ...a, buyout: 50 };
-    expect(funnelPer1000(a).costPerSold).toBeCloseTo(4, 9);
-    expect(funnelPer1000(b).costPerSold).toBeCloseTo(8, 9);
+    expect(funnelPer1000(a, 1).costPerSold).toBeCloseTo(4, 9);
+    expect(funnelPer1000(b, 1).costPerSold).toBeCloseTo(8, 9);
   });
 });
 
@@ -356,7 +392,7 @@ describe('воронка на одну продажу', () => {
     const { funnelView } = await import('./channel');
     // CPM 10, CTR 10%, конверсия 5%, апрув 80%, выкуп 80%: из 1000 показов 100 кликов, 5 заказов, 4 подтверждено, 3,2 проданных
     const ch = { ...demoDb().channels[0], adMode: 'funnel' as const, cpm: 10, ctr: 10, cr: 5, approve: 80, buyout: 80 };
-    const v = funnelView(ch);
+    const v = funnelView(ch, 1);
     expect(v.stages.map(s => s.key)).toEqual(['impressions', 'clicks', 'orders', 'approved', 'sold']);
     const get = (k: string) => v.stages.find(s => s.key === k)!;
     // на один проданный заказ
@@ -376,15 +412,15 @@ describe('воронка на одну продажу', () => {
   it('количество × цена любого шага даёт цену проданного заказа', async () => {
     const { funnelView, funnelPer1000 } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'funnel' as const, cpm: 3, ctr: 2, cr: 3, approve: 85, buyout: 88 };
-    const v = funnelView(ch);
-    const total = funnelPer1000(ch).costPerSold!;
+    const v = funnelView(ch, 1);
+    const total = funnelPer1000(ch, 1).costPerSold!;
     for (const s of v.stages) expect(s.count! * s.cost!).toBeCloseTo(total, 9);
   });
 
   it('известна цена заказа: показов и кликов нет, шаги заказы → подтверждённые → проданный', async () => {
     const { funnelView } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'cpa' as const, cpa: 7, approve: 90, buyout: 80 };
-    const v = funnelView(ch);
+    const v = funnelView(ch, 1);
     expect(v.stages.map(s => s.key)).toEqual(['orders', 'approved', 'sold']);
     expect(v.stages[0].count!).toBeCloseTo(100 / 72, 9);
     expect(v.stages[1].count!).toBeCloseTo(90 / 72, 9);
@@ -395,7 +431,7 @@ describe('воронка на одну продажу', () => {
   it('нулевой апрув: до покупки ничего не доходит', async () => {
     const { funnelView } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'cpa' as const, cpa: 7, approve: 0, buyout: 100 };
-    const v = funnelView(ch);
+    const v = funnelView(ch, 1);
     expect(v.stages.every(s => s.count === null)).toBe(true);
     expect(v.stages[2].cost).toBeNull();
   });
@@ -405,7 +441,7 @@ describe('воронка на заданное число продаж', () => {
   it('количества растут пропорционально, цены одной штуки не меняются, итог умножается', async () => {
     const { funnelView } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'funnel' as const, cpm: 10, ctr: 10, cr: 5, approve: 80, buyout: 80 };
-    const one = funnelView(ch, 1), many = funnelView(ch, 100);
+    const one = funnelView(ch, 1, 1), many = funnelView(ch, 1, 100);
     for (let i = 0; i < one.stages.length; i++) {
       expect(many.stages[i].count!).toBeCloseTo(one.stages[i].count! * 100, 7);
       expect(many.stages[i].cost!).toBeCloseTo(one.stages[i].cost!, 9);
@@ -418,8 +454,8 @@ describe('воронка на заданное число продаж', () => {
   it('по умолчанию на одну продажу', async () => {
     const { funnelView } = await import('./channel');
     const ch = { ...demoDb().channels[0], adMode: 'cpa' as const, cpa: 7, approve: 90, buyout: 80 };
-    expect(funnelView(ch).stages[2].count).toBe(1);
-    expect(funnelView(ch).total!).toBeCloseTo(700 / 72, 9);
+    expect(funnelView(ch, 1).stages[2].count).toBe(1);
+    expect(funnelView(ch, 1).total!).toBeCloseTo(700 / 72, 9);
   });
 });
 
@@ -800,13 +836,14 @@ describe('аналитика и прогноз', () => {
     expect(zero).toMatchObject({ marginPct: 0, adsPct: 0, profitPct: 0, perOrder: 0 });
   });
 
-  it('смена основной валюты пересчитывает денежные значения прогноза, проценты не трогает', async () => {
+  it('смена основной валюты пересчитывает денежные значения прогноза, проценты и CPM (он в долларах) не трогает', async () => {
     const { switchBaseCurrency } = await import('../dbOps');
     const db = demoDb();
     const id = db.channels[0].id, ref = `p:${db.products[0].id}`;
-    db.scenario = { channels: { [id]: { cpm: 8.6, ctr: 2 } }, offers: { [ref]: { price: 8.6 } } };
+    db.scenario = { channels: { [id]: { cpm: 8.6, cpa: 8.6, ctr: 2 } }, offers: { [ref]: { price: 8.6 } } };
     switchBaseCurrency(db, 'USD');                                     // 1 USD = 0,86 EUR
-    expect(db.scenario.channels![id].cpm).toBeCloseTo(10, 1);
+    expect(db.scenario.channels![id].cpa).toBeCloseTo(10, 1);
+    expect(db.scenario.channels![id].cpm).toBe(8.6);
     expect(db.scenario.channels![id].ctr).toBe(2);
     expect(db.scenario.offers![ref].price).toBeCloseTo(10, 1);
   });

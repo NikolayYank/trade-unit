@@ -2,7 +2,7 @@
 // (товары, наборы, каналы, магазин, настройки). Файл JSON — одна учётная запись.
 import { demoDb, emptyDb } from './demo';
 import { uid } from './engine/taxPresets';
-import { approveShare, buyoutShare } from './engine/channel';
+import { approveShare, buyoutShare, usdToBase } from './engine/channel';
 import { num } from './engine/money';
 import type { Channel, Db } from './engine/types';
 
@@ -57,7 +57,9 @@ export function uniqueName(name: string, list: Account[]): string {
  * 4. Выкуп канала: нет поля — берём 100% минус старый невыкуп. Предпочитаем невыкуп самого канала (старое поле noBuy),
  *    потом общий невыкуп магазина (store.noBuy, он был в промежуточной версии), иначе 0.
  * 5. Период плана в днях: нет поля — 30.
- * 6. План магазина: раньше строки «позиция × канал × оформлено заказов», теперь общий план продаж, доли позиций и доли каналов.
+ * 6. CPM всегда в долларах. Нет метки `cpmInUsd` (старые данные): CPM канала и CPM в прогнозе были в основной валюте,
+ *    переводим в доллары по текущему курсу и ставим метку. Повторный вызов ничего не меняет.
+ * 7. План магазина: раньше строки «позиция × канал × оформлено заказов», теперь общий план продаж, доли позиций и доли каналов.
  *    Оформленные заказы пересчитываются в проданные (через апрув и выкуп канала); их сумма становится планом продаж,
  *    а доли считаются из пропорций. Старый список `plan` остаётся в данных и не используется.
  */
@@ -73,6 +75,12 @@ export function normalizeDb(d: Db): Db {
     }
   }
   if (st.period === undefined) st.period = 30;
+  if (!d.settings.cpmInUsd) {
+    const k = usdToBase(d) || 1;
+    for (const c of d.channels) c.cpm = Math.round(num(c.cpm) / k * 100) / 100;
+    for (const c of Object.values(d.scenario?.channels ?? {})) if (c.cpm !== undefined) c.cpm = Math.round(num(c.cpm) / k * 100) / 100;
+    d.settings.cpmInUsd = true;
+  }
   if (st.items === undefined) convertOldPlan(st, channels as unknown as Channel[]);
   return d;
 }

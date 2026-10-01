@@ -5,7 +5,7 @@ import { STAGES, type Expense, type Product, type Settings, type StageKey } from
 export const STAGE_LABELS: Record<StageKey, string> = {
   purchase: 'Доп. расходы на закупку',
   local: 'Доставка по Китаю',
-  intl: 'Доставка по стране',
+  intl: 'Доставка основная',
   import: 'Таможня',
   pack: 'Упаковка товара',
 };
