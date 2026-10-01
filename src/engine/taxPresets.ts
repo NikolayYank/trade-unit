@@ -69,6 +69,9 @@ export const TAX_PRESETS: Preset[] = [
   },
 ];
 
+/** «Свой режим» с нуля: ни налогов, ни НДС. Всё добавляется вручную. */
+export const emptyTax = (): TaxConfig => ({ presetId: 'custom', vatPayer: false, vatRate: 0, lines: [] });
+
 export function taxFromPreset(id: string): TaxConfig {
   const p = TAX_PRESETS.find(x => x.id === id) ?? TAX_PRESETS[0];
   return {

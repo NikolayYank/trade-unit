@@ -6,7 +6,7 @@ import { calcAllProducts, kitOffer } from './offers';
 import { applyScenario, calcForecast, changePct, rowMetrics, scenarioCount, summarize } from './analytics';
 import { calcStore, forDays, margin, overheadAmount, perDay } from './store';
 import { calcTaxes } from './taxes';
-import { taxFromPreset } from './taxPresets';
+import { emptyTax, taxFromPreset } from './taxPresets';
 import type { Db } from './types';
 
 // Курсы исходного одностраничного калькулятора (v2), с чьими цифрами сверяются тесты: 1 USD = 0.92 EUR, 1 CNY = 0.12 EUR → CNY за USD = 0.92 / 0.12
@@ -74,6 +74,17 @@ describe('наборы', () => {
     expect(pc[db.products[0].id].available).toBeCloseTo(towel, 9);
     expect(k.maxFromStock).toBe(Math.floor(Math.min(towel / 2, spray)));
     expect(k.bottleneck).toBe(towel / 2 < spray ? db.products[0].name : db.products[1].name);
+  });
+});
+
+describe('свой налоговый режим', () => {
+  it('начинается с нуля: ни налогов, ни НДС, ничего от прежнего режима', () => {
+    const preset = taxFromPreset('ua_fop3');
+    expect(preset.lines.length).toBeGreaterThan(0);
+    const mine = emptyTax();
+    expect(mine).toEqual({ presetId: 'custom', vatPayer: false, vatRate: 0, lines: [] });
+    expect(emptyTax()).not.toBe(mine);                                  // каждый раз новый объект
+    expect(calcStore({ ...storeDb(), settings: { ...demoDb().settings, tax: mine } }).taxes).toBe(0);
   });
 });
 

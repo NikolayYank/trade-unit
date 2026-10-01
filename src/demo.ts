@@ -1,5 +1,5 @@
 // Демо-данные: стартовая база при первом открытии и по кнопке «Загрузить демо».
-import { taxFromPreset, uid } from './engine/taxPresets';
+import { taxFromPreset, uid, emptyTax } from './engine/taxPresets';
 import type { Channel, Db, Expense, ExpenseBasis, Product, StageKey, Currency } from './engine/types';
 
 const ex = (name: string, basis: ExpenseBasis, value: number, currency: Currency = 'EUR'): Expense =>
@@ -28,7 +28,7 @@ export function emptyDb(): Db {
       baseCurrency: 'USD',
       fx: { USD: 1, EUR: 0, CNY: 0, UAH: 0, UZS: 0 },
       fxUpdated: '',
-      tax: { presetId: 'custom', vatPayer: false, vatRate: 0, lines: [] },
+      tax: emptyTax(),
     },
     products: [], kits: [], channels: [],
     store: { sales: 0, period: 30, items: [], overhead: [] },

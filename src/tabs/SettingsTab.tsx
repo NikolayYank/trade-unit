@@ -3,7 +3,7 @@ import type { AccountOps, TabProps } from '../App';
 import { AccountsCard } from './AccountsTab';
 import { switchBaseCurrency } from '../dbOps';
 import { applyMarkup } from '../engine/money';
-import { TAX_PRESETS, taxFromPreset, uid } from '../engine/taxPresets';
+import { TAX_PRESETS, emptyTax, taxFromPreset, uid } from '../engine/taxPresets';
 import { fetchMarketRates } from '../fxFetch';
 import { CURRENCIES, type Db } from '../engine/types';
 import { TAX_BASES } from '../ui/tips';
@@ -98,21 +98,19 @@ export function SettingsTab({ db, mutate, ops }: P) {
           <div className="row">
       <Field size="xl" label="Режим">
         <select className="input" value={t.presetId} onChange={e => {
-          if (e.target.value === 'custom') { mutate(custom); return; }
+          // «Свой режим» всегда начинается с нуля: ни налогов, ни НДС, ничего от прежнего режима
+          if (e.target.value === 'custom') { mutate(d => { d.settings.tax = emptyTax(); }); return; }
           mutate(d => { d.settings.tax = taxFromPreset(e.target.value); });
         }}>
           <option value="custom">Свой режим</option>
           {countries.map(c => <optgroup key={c} label={c}>{TAX_PRESETS.filter(p => p.country === c).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>)}
         </select>
       </Field>
-    </div>
-    <div className="preset-hint">{preset ? preset.hint : 'Заполните налоги сами или выберите готовый режим своей страны.'}</div>
-    
-    <div className="row mt">
       <Toggle on={t.vatPayer} label="Работаю с НДС" onChange={v => mutate(d => { d.settings.tax.vatPayer = v; custom(d); })}
         tip={'С НДС: часть каждой продажи уходит государству, зато НДС на ввоз товара возвращают.\nБез НДС: вся цена ваша, но НДС на ввоз не вернут.'} />
       {t.vatPayer && <Field size="s" label="Ставка НДС"><Num value={t.vatRate} onChange={v => mutate(d => { d.settings.tax.vatRate = v ?? 0; custom(d); })} suffix="%" /></Field>}
     </div>
+    <div className="preset-hint">{preset ? preset.hint : 'Налогов нет, пока вы их не добавите. Добавьте свои или выберите готовый режим своей страны.'}</div>
     
     <div className="tax-lines mt">
       {t.lines.length > 0 && <div className="tax-row head"><span>Налог</span><span><Tip text={BASES_TIP}>Как считать</Tip></span><span>Сколько</span><span /></div>}
