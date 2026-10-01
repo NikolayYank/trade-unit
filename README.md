@@ -1,6 +1,6 @@
 # Trade Unit by Defo — калькулятор малого товарного бизнеса
 
-Автор: [Defo](https://portfolio.defo-tech.shop/).
+Автор: [Defo](https://portfolio.defo-tech.shop/). Репозиторий: https://github.com/NikolayYank/trade-unit
 
 Статичный сайт: считает, во сколько обходится товар, сколько остаётся с набора и заказа и чем закончится
 месяц магазина после рекламы и накладных расходов. Для одного предпринимателя (оборот до ~$250 тыс. в год),
@@ -20,7 +20,7 @@
 1. Проверь Node.js: `node -v` должно быть 20.19 или новее (подойдёт и 22.12+). Если Node нет или он старый, поставь актуальную LTS-версию с nodejs.org (или через менеджер версий) и скажи об этом пользователю.
 2. Скачай и установи:
    ```bash
-   git clone <ссылка на репозиторий> trade_unit
+   git clone https://github.com/NikolayYank/trade-unit.git trade_unit
    cd trade_unit
    npm install
    ```
