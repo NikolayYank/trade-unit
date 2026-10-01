@@ -3,7 +3,7 @@ import { demoDb } from '../demo';
 import { channelFunnel, funnelView, orderCtx, orderEconomics } from './channel';
 import { calcProduct } from './product';
 import { calcAllProducts, kitOffer } from './offers';
-import { applyScenario, calcForecast, changePct, rowMetrics, scenarioCount, summarize } from './analytics';
+import { applyScenario, calcForecast, changePct, rangeDays, rowMetrics, scenarioCount, summarize } from './analytics';
 import { calcStore, forDays, margin, overheadAmount, perDay } from './store';
 import { calcTaxes } from './taxes';
 import { emptyTax, taxFromPreset } from './taxPresets';
@@ -810,6 +810,15 @@ describe('аналитика и прогноз', () => {
     expect(s.profit).toBeCloseTo(r.profitAfterOverhead, 9);
     expect(s.profitMargin).toBeCloseTo(r.profitAfterOverhead / r.totals.revenue * 100, 9);
     expect(s.profitPerOrder).toBeCloseTo(r.profitAfterOverhead / r.totals.sold, 9);
+  });
+
+  it('свой срок: дни, недели и месяцы в днях, меньше одной единицы не бывает', () => {
+    expect(rangeDays(10, 'day')).toBe(10);
+    expect(rangeDays(3, 'week')).toBe(21);
+    expect(rangeDays(2, 'month')).toBe(60);
+    expect(rangeDays(0, 'week')).toBe(7);
+    expect(rangeDays(2.9, 'day')).toBe(2);
+    expect(forDays(300, 30, rangeDays(3, 'week'))).toBeCloseTo(210, 9);
   });
 
   it('изменение прогноза в процентах: выше плюс, ниже минус, от нуля не считается', () => {

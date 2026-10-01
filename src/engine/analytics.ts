@@ -1,5 +1,6 @@
 // Аналитика: итоги плана магазина в удобном виде и прогноз «что будет, если...».
 // Прогноз не меняет настоящие данные: берёт копию с подменёнными значениями и считает магазин заново.
+import { num } from './money';
 import { calcStore, margin, type OfferPatch, type StoreCalc, type Totals } from './store';
 import type { ProductCalcs } from './offers';
 import type { ChannelScenario, Db, Scenario } from './types';
@@ -73,3 +74,11 @@ export function rowMetrics(t: Totals): RowMetrics {
 
 /** На сколько процентов значение прогноза выше (плюс) или ниже (минус) настоящего. Настоящее 0 — null: процент не посчитать. */
 export const changePct = (now: number, forecast: number): number | null => (now !== 0 ? (forecast - now) / Math.abs(now) * 100 : null);
+
+export type RangeUnit = 'day' | 'week' | 'month';
+
+/** Сколько дней в одной единице срока. Месяц считается как 30 дней. */
+export const UNIT_DAYS: Record<RangeUnit, number> = { day: 1, week: 7, month: 30 };
+
+/** Свой срок: `count` дней, недель или месяцев в днях. Меньше одной единицы не бывает. */
+export const rangeDays = (count: number, unit: RangeUnit): number => Math.max(1, Math.floor(num(count))) * UNIT_DAYS[unit];

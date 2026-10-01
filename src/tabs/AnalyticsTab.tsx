@@ -1,17 +1,51 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { TabProps } from '../App';
-import { calcForecast, changePct, rowMetrics, scenarioCount, summarize, type Summary } from '../engine/analytics';
+import { calcForecast, changePct, rangeDays, rowMetrics, scenarioCount, summarize, UNIT_DAYS, type RangeUnit, type Summary } from '../engine/analytics';
 import { isPercentAd } from '../engine/channel';
 import { SYMBOLS } from '../engine/money';
 import type { ProductCalcs } from '../engine/offers';
 import { calcStore, forDays, type StoreCalc, type Totals } from '../engine/store';
 import type { ChannelScenario } from '../engine/types';
-import { Card, Note, Num, Segmented, Th, Tip, type Fmt } from '../ui/kit';
+import { Card, GroupedInt, Note, Num, Segmented, Select, Th, Tip, type Fmt } from '../ui/kit';
 
 type P = TabProps & { fmt: Fmt; pc: ProductCalcs };
 
-const RANGES = [['day', 'День', 1], ['week', 'Неделя', 7], ['month', 'Месяц', 30]] as const;
-type RangeId = (typeof RANGES)[number][0];
+const RANGES = [['day', 'День'], ['week', 'Неделя'], ['month', 'Месяц']] as const;
+type RangeId = (typeof RANGES)[number][0] | 'custom';
+const UNITS: [RangeUnit, string][] = [['day', 'дней'], ['week', 'недель'], ['month', 'месяцев']];
+const UNIT_SHORT: Record<RangeUnit, string> = { day: 'дн.', week: 'нед.', month: 'мес.' };
+interface Custom { count: number | null; unit: RangeUnit }
+
+/** Переключатель срока: день, неделя, месяц или свой. «Свой» открывает окно, где вписывается число и выбирается единица. */
+function RangePicker({ range, setRange, custom, setCustom }: { range: RangeId; setRange: (r: RangeId) => void; custom: Custom; setCustom: (c: Custom) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', away); document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', away); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  const customLabel = range === 'custom' ? `${Math.max(1, custom.count ?? 1)} ${UNIT_SHORT[custom.unit]}` : 'Свой';
+  return (
+    <div className="range-wrap" ref={box}>
+      <Segmented<RangeId> value={range} onChange={v => { setRange(v); if (v === 'custom') setOpen(true); else setOpen(false); }}
+        options={[...RANGES.map(r => [r[0], r[1]] as [RangeId, string]), ['custom', customLabel]]} />
+      {open && (
+        <div className="range-pop" role="dialog" aria-label="Свой срок">
+          <div className="range-pop-title">Свой срок</div>
+          <div className="range-pop-row">
+            <GroupedInt value={custom.count} placeholder="1" maxDigits={3} onChange={v => setCustom({ ...custom, count: v })} />
+            <Select<RangeUnit> value={custom.unit} options={UNITS} onChange={u => setCustom({ ...custom, unit: u })} />
+          </div>
+          <div className="range-pop-hint">{`Это ${rangeDays(custom.count ?? 1, custom.unit)} дн. Месяц считается как 30 дней.`}</div>
+          <button className="btn sm primary" onClick={() => setOpen(false)}>Готово</button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const CHANNEL_COLORS = ['var(--ch-1)', 'var(--ch-2)', 'var(--ch-3)', 'var(--ch-4)', 'var(--ch-5)', 'var(--ch-6)'];
 const signed = (v: number, text: string) => (v > 1e-9 ? `+${text}` : text);
@@ -21,8 +55,9 @@ type ViewId = (typeof VIEWS)[number][0];
 
 export function AnalyticsTab({ db, mutate, fmt, pc }: P) {
   const [range, setRange] = useState<RangeId>('month');
+  const [custom, setCustom] = useState<Custom>({ count: 2, unit: 'week' });   // свой срок, пока не изменён: 2 недели
   const [view, setView] = useState<ViewId>('now');
-  const days = RANGES.find(r => r[0] === range)![2];
+  const days = range === 'custom' ? rangeDays(custom.count ?? 1, custom.unit) : UNIT_DAYS[range];
   const base = useMemo(() => calcStore(db, pc), [db, pc]);
   const fc = useMemo(() => calcForecast(db, pc), [db, pc]);
   const forecast = view === 'forecast';
@@ -34,10 +69,10 @@ export function AnalyticsTab({ db, mutate, fmt, pc }: P) {
     <div className="layout-2">
       <div className="content">
         <div className="page-head">
-          <h2><Tip text={'Картина по плану магазина: что получится за день, неделю или месяц, если всё пойдёт как задумано. Это расчёт, а не учёт фактических продаж.\nСуммы за выбранный срок получаются из плана и его периода (вкладка «Магазин»). Накладные расходы «в месяц» делятся и умножаются так же, как всё остальное.\n«Сейчас»: расчёт по вашим настоящим данным. «Прогноз»: что будет, если изменить цену, рекламу, апрув и другие показатели справа. Настоящие данные при этом не меняются.'}>Аналитика</Tip></h2>
+          <h2><Tip text={'Картина по плану магазина: что получится за день, неделю, месяц или свой срок, если всё пойдёт как задумано. Это расчёт, а не учёт фактических продаж.\nСуммы за выбранный срок получаются из плана и его периода (вкладка «Магазин»). Накладные расходы «в месяц» делятся и умножаются так же, как всё остальное.\n«Сейчас»: расчёт по вашим настоящим данным. «Прогноз»: что будет, если изменить цену, рекламу, апрув и другие показатели справа. Настоящие данные при этом не меняются.'}>Аналитика</Tip></h2>
           <div className="head-ctl">
             <Segmented<ViewId> value={view} onChange={setView} options={VIEWS.map(v => [v[0], v[1]] as [ViewId, string])} />
-            <Segmented<RangeId> value={range} onChange={setRange} options={RANGES.map(r => [r[0], r[1]] as [RangeId, string])} />
+            <RangePicker range={range} setRange={setRange} custom={custom} setCustom={setCustom} />
           </div>
         </div>
 

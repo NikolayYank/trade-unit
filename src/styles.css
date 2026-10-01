@@ -597,3 +597,9 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .expense-row.tax-line { min-height: 32px }
 .tax-name { font-size: 13px; padding-left: 2px }
 .tax-how { font-size: 12px; color: var(--muted) }
+.range-wrap { position: relative }
+.range-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: 260px; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 40px rgba(0, 0, 0, .45) }
+.range-pop-title { font-size: 12px; font-weight: 700 }
+.range-pop-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px }
+.range-pop-hint { color: var(--muted); font-size: 11px }
+.range-pop .btn { align-self: flex-end }
