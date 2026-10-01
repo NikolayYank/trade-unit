@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { TabProps } from '../App';
-import { calcForecast, changePct, rangeDays, rowMetrics, scenarioCount, summarize, UNIT_DAYS, type RangeUnit, type Summary } from '../engine/analytics';
+import { calcForecast, changePct, profitEffect, rangeDays, rowMetrics, scenarioCount, summarize, UNIT_DAYS, type RangeUnit, type Summary } from '../engine/analytics';
 import { isPercentAd } from '../engine/channel';
 import { SYMBOLS } from '../engine/money';
 import type { ProductCalcs } from '../engine/offers';
 import { calcStore, forDays, type StoreCalc, type Totals } from '../engine/store';
-import type { ChannelScenario } from '../engine/types';
+import type { ChannelScenario, Scenario } from '../engine/types';
 import { Card, GroupedInt, Note, Num, Segmented, Select, Th, Tip, type Fmt } from '../ui/kit';
 
 type P = TabProps & { fmt: Fmt; pc: ProductCalcs };
@@ -88,7 +88,7 @@ export function AnalyticsTab({ db, mutate, fmt, pc }: P) {
       </div>
 
       <aside className="sidebar an-sidebar">
-        <Levers db={db} base={base} mutate={mutate} fmt={fmt} editable={forecast} />
+        <Levers db={db} pc={pc} base={base} mutate={mutate} fmt={fmt} editable={forecast} />
       </aside>
     </div>
   );
@@ -338,23 +338,43 @@ function Overhead({ calc, k, fmt }: SectionProps) {
 
 // ---------- справа: что можно менять ----------
 
-function Lever({ label, tip, now, show, value, onChange, suffix, bounds, editable }: {
-  label: string; tip?: string; now: number; show: (v: number) => string; value: number | undefined; onChange: (v: number | null) => void; suffix?: string; bounds?: [number, number]; editable: boolean;
+/** Что именно меняет рычаг: нужно, чтобы понять, выгодно ли это изменение. */
+type LeverScope =
+  | { k: 'sales' }
+  | { k: 'channel'; id: string; key: keyof ChannelScenario }
+  | { k: 'offer'; ref: string; key: 'price' | 'unitCost' }
+  | { k: 'overhead'; id: string; key: 'amount' | 'percent' };
+
+const scenarioOf = (s: LeverScope, v: number): Scenario =>
+  s.k === 'sales' ? { sales: v }
+    : s.k === 'channel' ? { channels: { [s.id]: { [s.key]: v } } }
+      : s.k === 'offer' ? { offers: { [s.ref]: { [s.key]: v } } }
+        : { overhead: { [s.id]: { [s.key]: v } } };
+
+/** Считает, как изменится чистая прибыль, если поменять только этот показатель. Даёт Levers, читает Lever. */
+const ImpactContext = createContext<(scope: LeverScope, value: number) => number>(() => 0);
+
+function Lever({ label, tip, now, show, value, onChange, suffix, bounds, editable, scope }: {
+  label: string; tip?: string; now: number; show: (v: number) => string; value: number | undefined; onChange: (v: number | null) => void; suffix?: string; bounds?: [number, number]; editable: boolean; scope: LeverScope;
 }) {
+  const impactOf = useContext(ImpactContext);
   const change = value === undefined ? null : changePct(now, value);
+  // выгодно ли изменение: смотрим, что оно делает с чистой прибылью
+  const effect = editable && value !== undefined ? impactOf(scope, value) : 0;
+  const tone = effect > 0.005 ? 'good' : effect < -0.005 ? 'bad' : '';
   return (
     <div className={`lever ${editable ? '' : 'plain'} ${editable && value !== undefined ? 'set' : ''}`}>
       <span className="lever-l"><Tip text={tip}>{label}</Tip></span>
       <span className="lever-cur">{show(now)}</span>
       {editable && <><div className="lever-in"><Num value={value ?? null} placeholder="—" onChange={onChange} suffix={suffix} bounds={bounds} /></div>
-      <span className="lever-d">
+      <span className={`lever-d ${tone}`}>
         {value === undefined ? '' : change === null ? '—' : Math.abs(change) < 0.05 ? '0%' : `${change > 0 ? '+' : '−'}${Math.abs(change).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}%`}
       </span></>}
     </div>
   );
 }
 
-function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreCalc; mutate: P['mutate']; fmt: Fmt; editable: boolean }) {
+function Levers({ db, pc, base, mutate, fmt, editable }: { db: P['db']; pc: ProductCalcs; base: StoreCalc; mutate: P['mutate']; fmt: Fmt; editable: boolean }) {
   const sc = db.scenario;
   const count = scenarioCount(sc);
   const pct: [number, number] = [0, 100];
@@ -383,8 +403,10 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
   );
   const none = (text: string) => <div className="empty">{text}</div>;
 
+  const impact = (scope: LeverScope, value: number) => profitEffect(db, pc, scenarioOf(scope, value), base.profitAfterOverhead);
+
   return (
-    <>
+    <ImpactContext.Provider value={impact}>
       <Card ckey="analytics:levers" title={editable ? 'Что можно менять' : 'Показатели'}
         tip={editable
           ? 'Главные показатели, на которые вы влияете. В колонке «Сейчас» настоящее значение из ваших данных, оно не меняется.\nВ колонке «Прогноз» впишите, каким оно может стать: вся аналитика слева пересчитается. Пустое поле значит «как сейчас».\nКнопка «Сбросить» очищает прогноз целиком.'
@@ -394,7 +416,7 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
         <div className="lever-box">
           <div className="lever-group">План</div>
           <Lever editable={editable} label="Продаж за период" tip="Сколько заказов продаётся за период плана." now={db.store.sales} show={fmt.int} value={sc?.sales}
-            onChange={setSales} suffix="шт." />
+            onChange={setSales} scope={{ k: 'sales' }} suffix="шт." />
         </div>
       </Card>
 
@@ -407,8 +429,8 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
             return (
               <div className="lever-box" key={x.item.id}>
                 <div className="lever-group">{x.offer!.name}</div>
-                <Lever editable={editable} label="Цена" tip="Цена продажи за штуку." now={x.offer!.price} show={fmt.unit} value={v.price} onChange={n => setOffer(ref, 'price', n)} suffix={fmt.sym} />
-                <Lever editable={editable} label="Себестоимость" tip="Во сколько обходится одна штука." now={x.offer!.unitCost} show={fmt.unit} value={v.unitCost} onChange={n => setOffer(ref, 'unitCost', n)} suffix={fmt.sym} />
+                <Lever editable={editable} label="Цена" tip="Цена продажи за штуку." now={x.offer!.price} show={fmt.unit} value={v.price} onChange={n => setOffer(ref, 'price', n)} scope={{ k: 'offer', ref, key: 'price' }} suffix={fmt.sym} />
+                <Lever editable={editable} label="Себестоимость" tip="Во сколько обходится одна штука." now={x.offer!.unitCost} show={fmt.unit} value={v.unitCost} onChange={n => setOffer(ref, 'unitCost', n)} scope={{ k: 'offer', ref, key: 'unitCost' }} suffix={fmt.sym} />
               </div>
             );
           })}
@@ -427,17 +449,17 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
               <div className="lever-box" key={c.id}>
                 <div className="lever-group">{c.name}</div>
                 {c.adMode === 'funnel' ? <>
-                  <Lever editable={editable} label="CPM" tip="Цена за 1000 показов рекламы, всегда в долларах." now={c.cpm} show={usd} value={v.cpm} onChange={set('cpm')} suffix="$" />
-                  <Lever editable={editable} label="CTR" tip="Сколько процентов увидевших рекламу нажимают на неё." now={c.ctr} show={fmt.pct} value={v.ctr} onChange={set('ctr')} suffix="%" bounds={pct} />
-                  <Lever editable={editable} label="Конверсия" tip="Сколько процентов зашедших на сайт оформляют заказ." now={c.cr} show={fmt.pct} value={v.cr} onChange={set('cr')} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="CPM" tip="Цена за 1000 показов рекламы, всегда в долларах." now={c.cpm} show={usd} value={v.cpm} onChange={set('cpm')} scope={{ k: 'channel', id: c.id, key: 'cpm' }} suffix="$" />
+                  <Lever editable={editable} label="CTR" tip="Сколько процентов увидевших рекламу нажимают на неё." now={c.ctr} show={fmt.pct} value={v.ctr} onChange={set('ctr')} scope={{ k: 'channel', id: c.id, key: 'ctr' }} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="Конверсия" tip="Сколько процентов зашедших на сайт оформляют заказ." now={c.cr} show={fmt.pct} value={v.cr} onChange={set('cr')} scope={{ k: 'channel', id: c.id, key: 'cr' }} suffix="%" bounds={pct} />
                 </> : percent ? (
-                  <Lever editable={editable} label="Процент" tip="Процент от оборота, который забирает канал." now={c.cpaPercent ?? 0} show={fmt.pct} value={v.cpaPercent} onChange={set('cpaPercent')} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="Процент" tip="Процент от оборота, который забирает канал." now={c.cpaPercent ?? 0} show={fmt.pct} value={v.cpaPercent} onChange={set('cpaPercent')} scope={{ k: 'channel', id: c.id, key: 'cpaPercent' }} suffix="%" bounds={pct} />
                 ) : (
-                  <Lever editable={editable} label="Реклама за заказ" tip="Сколько стоит один оформленный заказ." now={c.cpa} show={fmt.unit} value={v.cpa} onChange={set('cpa')} suffix={fmt.sym} />
+                  <Lever editable={editable} label="Реклама за заказ" tip="Сколько стоит один оформленный заказ." now={c.cpa} show={fmt.unit} value={v.cpa} onChange={set('cpa')} scope={{ k: 'channel', id: c.id, key: 'cpa' }} suffix={fmt.sym} />
                 )}
                 {!percent && <>
-                  <Lever editable={editable} label="Апрув" tip="Какая часть заказов подтверждается." now={c.approve ?? 100} show={fmt.pct} value={v.approve} onChange={set('approve')} suffix="%" bounds={pct} />
-                  <Lever editable={editable} label="Выкуп" tip="Какая часть посылок забирается клиентами." now={c.buyout ?? 100} show={fmt.pct} value={v.buyout} onChange={set('buyout')} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="Апрув" tip="Какая часть заказов подтверждается." now={c.approve ?? 100} show={fmt.pct} value={v.approve} onChange={set('approve')} scope={{ k: 'channel', id: c.id, key: 'approve' }} suffix="%" bounds={pct} />
+                  <Lever editable={editable} label="Выкуп" tip="Какая часть посылок забирается клиентами." now={c.buyout ?? 100} show={fmt.pct} value={v.buyout} onChange={set('buyout')} scope={{ k: 'channel', id: c.id, key: 'buyout' }} suffix="%" bounds={pct} />
                 </>}
               </div>
             );
@@ -454,14 +476,14 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
               const kind = o.kind ?? 'fixed', v = sc?.overhead?.[o.id] ?? {};
               const sym = SYMBOLS[o.currency].trim();
               if (kind === 'percent' || kind === 'percentAds') {
-                return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'percent' ? 'Процент от оборота.' : 'Процент от рекламного бюджета.'} now={o.percent ?? 0} show={fmt.pct} value={v.percent} onChange={n => setOverhead(o.id, 'percent', n)} suffix="%" bounds={pct} />;
+                return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'percent' ? 'Процент от оборота.' : 'Процент от рекламного бюджета.'} now={o.percent ?? 0} show={fmt.pct} value={v.percent} onChange={n => setOverhead(o.id, 'percent', n)} scope={{ k: 'overhead', id: o.id, key: 'percent' }} suffix="%" bounds={pct} />;
               }
               const money = (x: number) => `${x.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${sym}`;
-              return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'perUnit' ? 'Сумма за каждую проданную штуку.' : 'Сумма в месяц.'} now={o.amount} show={money} value={v.amount} onChange={n => setOverhead(o.id, 'amount', n)} suffix={sym} />;
+              return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'perUnit' ? 'Сумма за каждую проданную штуку.' : 'Сумма в месяц.'} now={o.amount} show={money} value={v.amount} onChange={n => setOverhead(o.id, 'amount', n)} scope={{ k: 'overhead', id: o.id, key: 'amount' }} suffix={sym} />;
             })}
           </div>
         </>}
       </Card>
-    </>
+    </ImpactContext.Provider>
   );
 }

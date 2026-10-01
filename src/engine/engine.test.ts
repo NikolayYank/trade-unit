@@ -3,7 +3,7 @@ import { demoDb } from '../demo';
 import { channelFunnel, funnelView, orderCtx, orderEconomics } from './channel';
 import { calcProduct } from './product';
 import { calcAllProducts, kitOffer } from './offers';
-import { applyScenario, calcForecast, changePct, rangeDays, rowMetrics, scenarioCount, summarize } from './analytics';
+import { applyScenario, calcForecast, changePct, profitEffect, rangeDays, rowMetrics, scenarioCount, summarize } from './analytics';
 import { calcStore, forDays, margin, overheadAmount, perDay } from './store';
 import { calcTaxes } from './taxes';
 import { emptyTax, taxFromPreset } from './taxPresets';
@@ -835,6 +835,19 @@ describe('аналитика и прогноз', () => {
     expect(rangeDays(0, 'week')).toBe(7);
     expect(rangeDays(2.9, 'day')).toBe(2);
     expect(forDays(300, 30, rangeDays(3, 'week'))).toBeCloseTo(210, 9);
+  });
+
+  it('выгодность изменения: меняем один показатель и смотрим, что стало с чистой прибылью', () => {
+    const db = storeDb();
+    const pc = calcAllProducts(db);
+    const base = calcStore(db, pc).profitAfterOverhead;
+    const ch = db.channels[0].id, ref = `p:${db.products[0].id}`;
+    expect(profitEffect(db, pc, { offers: { [ref]: { price: 20 } } }, base)).toBeGreaterThan(0);          // цена выше: выгодно
+    expect(profitEffect(db, pc, { offers: { [ref]: { unitCost: 9 } } }, base)).toBeLessThan(0);           // себестоимость выше: невыгодно
+    expect(profitEffect(db, pc, { channels: { [ch]: { cpa: 9 } } }, base)).toBeLessThan(0);               // реклама дороже: невыгодно
+    expect(profitEffect(db, pc, { channels: { [ch]: { approve: 60 } } }, base)).toBeLessThan(0);          // апрув ниже: невыгодно
+    expect(profitEffect(db, pc, { sales: db.store.sales * 2 }, base)).toBeGreaterThan(0);                 // больше продаж с прибыльных позиций
+    expect(profitEffect(db, pc, { channels: { [ch]: { cpm: 99 } } }, base)).toBe(0);                      // у канала по готовой цене CPM не используется
   });
 
   it('изменение прогноза в процентах: выше плюс, ниже минус, от нуля не считается', () => {

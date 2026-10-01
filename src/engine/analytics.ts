@@ -90,3 +90,12 @@ export const UNIT_DAYS: Record<RangeUnit, number> = { day: 1, week: 7, month: 30
 
 /** Свой срок: `count` дней, недель или месяцев в днях. Меньше одной единицы не бывает. */
 export const rangeDays = (count: number, unit: RangeUnit): number => Math.max(1, Math.floor(num(count))) * UNIT_DAYS[unit];
+
+/**
+ * Как изменится чистая прибыль, если в прогнозе поменять только то, что записано в `sc`, а всё остальное оставить как сейчас.
+ * Плюс: изменение выгодно, минус: невыгодно, ноль: на прибыль не влияет. `baseProfit` — чистая прибыль без прогноза.
+ */
+export function profitEffect(db: Db, pc: ProductCalcs, sc: Scenario, baseProfit: number): number {
+  const { db: d, patch } = applyScenario(db, sc);
+  return calcStore(d, pc, patch).profitAfterOverhead - baseProfit;
+}
