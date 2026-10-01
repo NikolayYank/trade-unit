@@ -828,16 +828,16 @@ describe('аналитика и прогноз', () => {
     expect(changePct(0, 5)).toBeNull();
   });
 
-  it('новые итоги: средний чек, маржинальность, эффективность рекламы, окупаемость', () => {
+  it('новые итоги: средний чек, маржинальность, отдача рекламы (от маржи), окупаемость', () => {
     const r = calcStore(demoDb());
     const s = summarize(r);
     expect(s.avgCheck).toBeCloseTo(r.totals.revenue / r.totals.sold, 9);
     expect(s.marginPct).toBeCloseTo((r.totals.revenue - r.totals.cogs) / r.totals.revenue * 100, 9);
-    expect(s.roas).toBeCloseTo(r.totals.revenue / r.totals.ads, 9);
+    expect(s.poas).toBeCloseTo((r.totals.revenue - r.totals.cogs) / r.totals.ads, 9);   // от маржи, не от оборота
     const costs = r.totals.cogs + r.totals.ads + r.overhead;
     expect(s.roi).toBeCloseTo(r.profitAfterOverhead / costs * 100, 9);
     const none = summarize(calcStore({ ...demoDb(), store: { ...demoDb().store, sales: 0 } }));
-    expect(none).toMatchObject({ avgCheck: 0, marginPct: 0, roas: null });   // без продаж и рекламы не делим на ноль
+    expect(none).toMatchObject({ avgCheck: 0, marginPct: 0, poas: null });   // без продаж и рекламы не делим на ноль
   });
 
   it('показатели строки: деньги и проценты от оборота строки, прибыль с заказа', () => {
