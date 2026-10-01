@@ -37,6 +37,9 @@ export function emptyDb(): Db {
   };
 }
 
+/** Название учётной записи с демо-данными: тестовый образец, на котором видно, как всё работает. */
+export const DEMO_NAME = 'Тест-пример';
+
 export function demoDb(): Db {
   const towel: Product = {
     ...newProduct('Автомобильное полотенце'), sku: 'TOWEL-6090', batchQty: 1000, unitCost: 3.2, unitCostCurrency: 'CNY',

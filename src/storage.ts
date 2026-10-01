@@ -1,6 +1,6 @@
 // Хранение: несколько учётных записей в localStorage. Учётная запись = отдельная база
 // (товары, наборы, каналы, магазин, настройки). Файл JSON — одна учётная запись.
-import { demoDb, emptyDb } from './demo';
+import { DEMO_NAME, demoDb, emptyDb } from './demo';
 import { uid } from './engine/taxPresets';
 import { approveShare, buyoutShare, usdToBase } from './engine/channel';
 import { num } from './engine/money';
@@ -29,7 +29,7 @@ export function loadAccounts(): Accounts {
       return { activeId: acc.id, list: [acc] };
     }
   } catch { /* битые данные или запрет хранилища — стартуем с примера */ }
-  const acc = { id: uid(), name: 'Пример', db: demoDb() };
+  const acc = { id: uid(), name: DEMO_NAME, db: demoDb() };
   return { activeId: acc.id, list: [acc] };
 }
 

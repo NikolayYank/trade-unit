@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { missingRates } from './dbOps';
-import { demoDb } from './demo';
+import { DEMO_NAME, demoDb } from './demo';
 import { calcAllProducts } from './engine/offers';
 import type { Db } from './engine/types';
 import { downloadAccount, loadAccounts, newAccount, parseAccountFile, saveAccounts, uniqueName, type Accounts } from './storage';
@@ -104,9 +104,9 @@ export function App() {
     },
     importFile: () => fileRef.current?.click(),
     addDemo: () => {
-      const acc = newAccount(uniqueName('Пример', accs.list), demoDb());
+      const acc = newAccount(uniqueName(DEMO_NAME, accs.list), demoDb());
       setAccs(p => ({ activeId: acc.id, list: [...p.list, acc] }));
-      setToast('Добавлена учётная запись с примером');
+      setToast(`Добавлена учётная запись «${DEMO_NAME}»`);
     },
   };
 
