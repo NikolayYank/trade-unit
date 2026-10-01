@@ -7,7 +7,7 @@ import type { OverheadKind, PlanItem } from '../engine/types';
 import { Card, CurrencySelect, Del, GroupedInt, Note, Num, Pair, Select, Th, Tip, Unit, type Fmt } from '../ui/kit';
 
 type P = TabProps & { fmt: Fmt; pc: ProductCalcs };
-type MetricColor = 'revenue' | 'cogs' | 'ads' | 'overhead' | 'margin' | 'profit';
+type MetricColor = 'revenue' | 'cogs' | 'ads' | 'overhead' | 'margin' | 'contrib' | 'profit';
 
 const OVERHEAD_KINDS: [OverheadKind, string][] = [['fixed', 'сумма в месяц'], ['percent', '% от оборота'], ['perUnit', 'за штуку']];
 const sumOther = <T,>(list: T[], i: number, get: (x: T) => number) => list.reduce((a, x, k) => a + (k === i ? 0 : get(x)), 0);
@@ -41,7 +41,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
   const pctOfRevenue = (v: number) => (T.revenue > 0 ? fmt.pct(v / T.revenue * 100) : '');
   const day = (v: number) => perDay(v, r.period);
   const line = (label: React.ReactNode, v: number, cls = '', color: MetricColor = 'revenue') => {
-    const c = `c-${color}${color === 'profit' && v < 0 ? ' neg' : ''}`;
+    const c = `c-${color}${(color === 'profit' || color === 'contrib') && v < 0 ? ' neg' : ''}`;
     return <tr className={cls}><td>{label}</td><td className={`num ${c}`}>{fmt.money(v)}</td><td className={`num day ${c}`}>{fmt.money(day(v))}</td><td className="num muted">{pctOfRevenue(v)}</td></tr>;
   };
 
@@ -53,7 +53,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
       <td className="num"><span className="c-cogs">{fmt.money(t.cogs)}</span>{sub(t.cogs, t.revenue)}</td>
       <td className="num"><span className="c-ads">{fmt.money(t.ads)}</span>{sub(t.ads, t.revenue)}</td>
       <td className="num"><span className="c-margin">{fmt.money(margin(t))}</span>{sub(margin(t), t.revenue)}</td>
-      <td className="num"><b className={t.contribution < 0 ? 'neg' : 'c-profit'}>{fmt.money(t.contribution)}</b>{sub(t.contribution, t.revenue)}</td>
+      <td className="num"><b className={t.contribution < 0 ? 'neg' : 'c-contrib'}>{fmt.money(t.contribution)}</b>{sub(t.contribution, t.revenue)}</td>
     </>
   );
 
@@ -187,7 +187,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
           </div>
           <div className="hero">
             <div className="label"><Tip text="Что остаётся после товара, рекламы и накладных расходов. Налоги пока не учтены.">Чистая прибыль</Tip></div>
-            <div className={`value ${r.profitAfterOverhead < 0 ? 'neg' : ''}`}>{fmt.money(r.profitAfterOverhead)}</div>
+            <div className={`value ${r.profitAfterOverhead < 0 ? 'neg' : 'c-profit'}`}>{fmt.money(r.profitAfterOverhead)}</div>
             <div className="hero-badges">
               <span className={`hero-badge ${r.profitAfterOverhead < 0 ? 'neg' : ''}`}>{fmt.money(day(r.profitAfterOverhead))} в день</span>
               {T.revenue > 0 && <span className={`hero-badge soft ${r.profitAfterOverhead < 0 ? 'neg' : ''}`}>{fmt.pct(r.profitAfterOverhead / T.revenue * 100)} от оборота</span>}
@@ -200,7 +200,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
               {line(vat ? 'Оборот без НДС' : 'Оборот', T.revenue, 'strong')}
               {line('Себестоимость', -T.cogs, '', 'cogs')}
               {line('Реклама', -T.ads, '', 'ads')}
-              {line(<Tip text="Сколько остаётся после товара и рекламы. Накладные расходы ещё не вычтены.">Прибыль до накладных</Tip>, T.contribution, 'strong', 'profit')}
+              {line(<Tip text="Сколько остаётся после товара и рекламы. Накладные расходы ещё не вычтены.">Прибыль до накладных</Tip>, T.contribution, 'strong', 'contrib')}
               {line('Накладные расходы', -r.overhead, '', 'overhead')}
               {line('Чистая прибыль', r.profitAfterOverhead, 'total', 'profit')}
             </tbody>

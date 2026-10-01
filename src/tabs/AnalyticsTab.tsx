@@ -12,7 +12,7 @@ type P = TabProps & { fmt: Fmt; pc: ProductCalcs };
 const RANGES = [['day', 'День', 1], ['week', 'Неделя', 7], ['month', 'Месяц', 30]] as const;
 type RangeId = (typeof RANGES)[number][0];
 
-const CHANNEL_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)'];
+const CHANNEL_COLORS = ['var(--ch-1)', 'var(--ch-2)', 'var(--ch-3)', 'var(--ch-4)', 'var(--ch-5)', 'var(--ch-6)'];
 const signed = (v: number, text: string) => (v > 1e-9 ? `+${text}` : text);
 
 const VIEWS = [['now', 'Сейчас'], ['forecast', 'Прогноз']] as const;
@@ -65,12 +65,12 @@ type SectionProps = { calc: StoreCalc; k: (v: number) => number; fmt: Fmt };
 
 function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc | null; k: (v: number) => number; fmt: Fmt }) {
   const cur = summarize(calc), was = compare && summarize(compare);   // was: текущие значения, с которыми сравнивается прогноз
-  const tiles: { key: string; label: string; tip: string; get: (s: Summary) => number; show: (v: number) => string; delta: (v: number) => string }[] = [
-    { key: 'revenue', label: 'Оборот', tip: 'Деньги за проданные заказы (без НДС, если вы с НДС).', get: s => k(s.revenue), show: fmt.money, delta: fmt.money },
-    { key: 'profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов. Налоги пока не учтены.', get: s => k(s.profit), show: fmt.money, delta: fmt.money },
-    { key: 'margin', label: 'Рентабельность', tip: 'Какую часть оборота составляет чистая прибыль.', get: s => s.profitMargin, show: v => fmt.pct(v), delta: v => `${v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} п.п.` },
+  const tiles: { key: string; cls?: string; label: string; tip: string; get: (s: Summary) => number; show: (v: number) => string; delta: (v: number) => string }[] = [
+    { key: 'revenue', cls: 'c-revenue', label: 'Оборот', tip: 'Деньги за проданные заказы (без НДС, если вы с НДС).', get: s => k(s.revenue), show: fmt.money, delta: fmt.money },
+    { key: 'profit', cls: 'c-profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов. Налоги пока не учтены.', get: s => k(s.profit), show: fmt.money, delta: fmt.money },
+    { key: 'margin', cls: 'c-profit', label: 'Рентабельность', tip: 'Какую часть оборота составляет чистая прибыль.', get: s => s.profitMargin, show: v => fmt.pct(v), delta: v => `${v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} п.п.` },
     { key: 'sold', label: 'Продано заказов', tip: 'Заказы, которые клиент забрал и оплатил.', get: s => k(s.sold), show: v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 }), delta: v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) },
-    { key: 'perOrder', label: 'Прибыль с заказа', tip: 'Чистая прибыль, делённая на число проданных заказов.', get: s => s.profitPerOrder, show: fmt.unit, delta: fmt.unit },
+    { key: 'perOrder', cls: 'c-profit', label: 'Прибыль с заказа', tip: 'Чистая прибыль, делённая на число проданных заказов.', get: s => s.profitPerOrder, show: fmt.unit, delta: fmt.unit },
   ];
   return (
     <div className="an-kpis">
@@ -80,7 +80,7 @@ function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc |
         return (
           <div className={`an-kpi ${t.key === 'profit' ? 'main' : ''}`} key={t.key}>
             <div className="an-kpi-l"><Tip text={t.tip}>{t.label}</Tip></div>
-            <div className={`an-kpi-v ${v < 0 ? 'neg' : ''}`}>{t.show(v)}</div>
+            <div className={`an-kpi-v ${v < 0 ? 'neg' : t.cls ?? ''}`}>{t.show(v)}</div>
             {w !== null && (
               <div className="an-kpi-f">
                 <span>сейчас {t.show(w)}</span>
@@ -97,10 +97,10 @@ function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc |
 // ---------- куда уходит оборот ----------
 
 const PARTS = [
-  { key: 'cogs', label: 'Себестоимость', color: 'var(--chart-1)' },
-  { key: 'ads', label: 'Реклама', color: 'var(--chart-2)' },
-  { key: 'overhead', label: 'Накладные', color: 'var(--chart-3)' },
-  { key: 'profit', label: 'Чистая прибыль', color: 'var(--chart-4)' },
+  { key: 'cogs', label: 'Себестоимость', color: 'var(--c-cogs)', cls: 'c-cogs' },
+  { key: 'ads', label: 'Реклама', color: 'var(--c-ads)', cls: 'c-ads' },
+  { key: 'overhead', label: 'Накладные', color: 'var(--c-overhead)', cls: 'c-overhead' },
+  { key: 'profit', label: 'Чистая прибыль', color: 'var(--c-profit)', cls: 'c-profit' },
 ] as const;
 
 /** Куда идёт каждая часть оборота: где в полосе начинается и какую долю занимает (в % ширины полосы). */
@@ -150,7 +150,7 @@ function Structure({ calc, k, fmt }: SectionProps) {
           <div className="legend-item" key={l.key} style={{ top: `${l.row * 68}px`, ...(l.start > LEGEND_EDGE ? { right: 0 } : { left: `${l.start}%` }) }}>
             <span className="dot" style={{ background: l.color }} />
             <span className="legend-name">{l.label}</span>
-            <b className={l.key === 'profit' && vals.profit < 0 ? 'neg' : ''}>{fmt.money(k(vals[l.key]))}</b>
+            <b className={l.key === 'profit' && vals.profit < 0 ? 'neg' : l.cls}>{fmt.money(k(vals[l.key]))}</b>
             <span className="legend-pct">{s.revenue > 0 ? fmt.pct(vals[l.key] / s.revenue * 100) : ''}</span>
           </div>
         ))}
@@ -209,11 +209,11 @@ function MetricsTable({ rows, first, total, k, fmt }: { rows: MRow[]; first: str
           {ms.map(r => (
             <tr key={r.key}>
               <td>{r.name}</td>
-              <td className="num mcell"><b>{money(r.m.revenue)}</b><span className="cell-sub">{total.revenue > 0 ? fmt.pct(r.m.revenue / total.revenue * 100) : ''}</span></td>
-              <td className="num mcell"><b>{money(r.m.margin)}</b><span className="cell-sub">{r.m.revenue > 0 ? fmt.pct(r.m.marginPct) : ''}</span></td>
-              <td className="num mcell"><b>{money(r.m.ads)}</b><span className="cell-sub">{r.m.revenue > 0 ? fmt.pct(r.m.adsPct) : ''}</span></td>
-              <td className="num mcell"><b className={r.m.profit < 0 ? 'neg' : ''}>{money(r.m.profit)}</b><span className={`cell-sub ${r.m.profit < 0 ? 'neg' : ''}`}>{r.m.revenue > 0 ? fmt.pct(r.m.profitPct) : ''}</span></td>
-              <td className="num mcell"><b className={r.m.perOrder < 0 ? 'neg' : ''}>{fmt.unit(r.m.perOrder)}</b></td>
+              <td className="num mcell"><b className="c-revenue">{money(r.m.revenue)}</b><span className="cell-sub">{total.revenue > 0 ? fmt.pct(r.m.revenue / total.revenue * 100) : ''}</span></td>
+              <td className="num mcell"><b className="c-margin">{money(r.m.margin)}</b><span className="cell-sub">{r.m.revenue > 0 ? fmt.pct(r.m.marginPct) : ''}</span></td>
+              <td className="num mcell"><b className="c-ads">{money(r.m.ads)}</b><span className="cell-sub">{r.m.revenue > 0 ? fmt.pct(r.m.adsPct) : ''}</span></td>
+              <td className="num mcell"><b className={r.m.profit < 0 ? 'neg' : 'c-contrib'}>{money(r.m.profit)}</b><span className={`cell-sub ${r.m.profit < 0 ? 'neg' : ''}`}>{r.m.revenue > 0 ? fmt.pct(r.m.profitPct) : ''}</span></td>
+              <td className="num mcell"><b className={r.m.perOrder < 0 ? 'neg' : 'c-contrib'}>{fmt.unit(r.m.perOrder)}</b></td>
             </tr>
           ))}
         </tbody>

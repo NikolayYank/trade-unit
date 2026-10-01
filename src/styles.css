@@ -25,18 +25,21 @@
   --pair-w: 196px;          /* ширина пары «число + валюта» в строках расходов */
   --unit-w: 84px;           /* ширина единицы в паре */
   --shadow: 0 12px 40px rgba(0, 0, 0, .22);
-  --chart-1: #7c6df2;       /* палитра графиков */
-  --chart-2: #f5b84b;
-  --chart-3: #4aa8e8;
-  --chart-4: #55c59a;
-  --chart-5: #f0747f;
-  --chart-6: #c084fc;
-  --c-revenue: #f5f7fb;     /* цвета чисел: оборот, себестоимость, реклама, накладные, маржа, прибыль */
-  --c-cogs: #a79dff;
-  --c-ads: #f5b84b;
-  --c-overhead: #6dbcf0;
-  --c-margin: #5fd0d8;
-  --c-profit: #55c59a;
+  /* Цвета денежных показателей. Один показатель, один цвет, везде. Фиолетовый акцент интерфейса (кнопки, вкладки) к ним не относится. */
+  --c-revenue: #f5f7fb;     /* оборот */
+  --c-cogs: #a98bff;        /* себестоимость */
+  --c-ads: #4da3ff;         /* реклама */
+  --c-margin: #3fd0d0;      /* маржа */
+  --c-contrib: #b8e04a;     /* прибыль до накладных */
+  --c-overhead: #ff9a4d;    /* накладные расходы */
+  --c-profit: #3ddc97;      /* чистая прибыль */
+  /* Цвета каналов продаж на кольце и в таблице: не совпадают с цветами показателей. */
+  --ch-1: #f472b6;
+  --ch-2: #facc15;
+  --ch-3: #94a3b8;
+  --ch-4: #bfae7a;
+  --ch-5: #cbd5e1;
+  --ch-6: #b45f86;
   color-scheme: dark;
 }
 * { box-sizing: border-box }
@@ -188,7 +191,7 @@ details.sub-block[open] summary { margin-bottom: 12px }
 .hero .sub { font-size: 11px; color: var(--success); margin-top: 4px }
 .hero-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px }
 .hero-badge { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 7px; border: 1px solid var(--line); font-size: 11.5px; font-weight: 650; white-space: nowrap }
-.hero-badge.soft { border-color: transparent; background: var(--accent-soft); color: var(--accent-text) }
+.hero-badge.soft { border-color: transparent; background: rgba(61, 220, 151, .14); color: var(--c-profit) }
 .hero-badge.neg { color: var(--danger) }
 .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
 .kpi { border: 1px solid var(--line-soft); border-radius: 9px; padding: 9px 11px; background: rgba(255, 255, 255, .012); min-width: 0 }
@@ -240,8 +243,9 @@ details.sub-block[open] summary { margin-bottom: 12px }
 .c-ads { color: var(--c-ads) !important }
 .c-overhead { color: var(--c-overhead) !important }
 .c-margin { color: var(--c-margin) !important }
+.c-contrib { color: var(--c-contrib) !important }
 .c-profit { color: var(--c-profit) !important }
-.table.pnl td.day.c-cogs, .table.pnl td.day.c-ads, .table.pnl td.day.c-overhead, .table.pnl td.day.c-profit, .table.pnl td.day.c-revenue { opacity: .75 }
+.table.pnl td.day.c-cogs, .table.pnl td.day.c-ads, .table.pnl td.day.c-overhead, .table.pnl td.day.c-profit, .table.pnl td.day.c-contrib, .table.pnl td.day.c-revenue { opacity: .75 }
 .neg { color: var(--danger) !important }
 .pos { color: var(--success) }
 .warn { color: var(--warning) }
@@ -538,12 +542,11 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .head-ctl { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end }
 .an-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
 .an-kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; min-width: 0 }
-.an-kpi.main { background: linear-gradient(180deg, var(--accent-soft), transparent 90%), var(--panel); border-color: rgba(124, 109, 242, .35) }
 .an-kpi-l { color: var(--muted); font-size: 11px }
 .an-kpi-v { font-size: 22px; font-weight: 720; letter-spacing: -.03em; margin-top: 6px; white-space: nowrap }
 .an-kpi.main .an-kpi-v { font-size: 26px }
 .an-kpi-v.neg { color: var(--danger) }
-.an-kpi-f { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--accent-text) }
+.an-kpi-f { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--muted) }
 .delta { padding: 1px 6px; border-radius: 5px; background: rgba(255, 255, 255, .05); color: var(--muted); font-weight: 650 }
 .delta.up { background: rgba(85, 197, 154, .14); color: var(--success) }
 .delta.down { background: rgba(240, 116, 127, .14); color: var(--danger) }
@@ -563,7 +566,7 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .bar-row { display: grid; grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) 120px; align-items: center; gap: 14px }
 .bar-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .bar-track { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
-.bar-fill { height: 10px; border-radius: 5px; min-width: 2px; background: var(--chart-1); transition: width .25s }
+.bar-fill { height: 10px; border-radius: 5px; min-width: 2px; background: var(--c-overhead); transition: width .25s }
 .bar-val { display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 13px; white-space: nowrap }
 
 .channels-grid { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; align-items: center }
@@ -583,12 +586,12 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .lever-cur { text-align: right; font-size: 12px; color: var(--muted); white-space: nowrap }
 .lever.plain, .lever.head.plain { grid-template-columns: minmax(0, 1fr) auto }
 .lever-in .input { height: 28px; font-size: 12px }
-.lever-d { text-align: right; font-size: 12px; font-weight: 650; color: var(--accent-text); white-space: nowrap }
+.lever-d { text-align: right; font-size: 12px; font-weight: 650; color: var(--text); white-space: nowrap }
 .lever.set .lever-cur { text-decoration: line-through; color: var(--muted-2) }
 .lever.set .lever-in .input { border-color: var(--accent); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35), 0 0 0 1px var(--accent-soft) }
 .lever-box { margin-top: 10px; padding: 9px 12px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2) }
 .lever-box:first-child { margin-top: 10px }
-.lever-group { margin: 0 0 4px; color: var(--accent-text); font-size: 12px; font-weight: 650; letter-spacing: .01em }
+.lever-group { margin: 0 0 4px; color: var(--text); font-size: 12px; font-weight: 650; letter-spacing: .01em }
 
 @media (max-width: 760px) {
   .legend-track { height: auto !important; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
