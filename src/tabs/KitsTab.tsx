@@ -66,7 +66,7 @@ function KitCard({ k, db, mutate, fmt, pc }: { k: Kit } & Omit<P, 'setDb'>) {
               })}
             </tbody>
           </table>
-          <button className="add-row" onClick={() => set(x => { x.items.push({ productId: db.products[0].id, qty: 1 }); })}>+ Товар в набор</button>
+          <button className="btn sm add-btn" onClick={() => set(x => { x.items.push({ productId: db.products[0].id, qty: 1 }); })}>+ Товар в набор</button>
         </div>
 
         <div className="kit-col">

@@ -9,11 +9,6 @@ export function toBase(value: number, from: Currency, s: Settings): number {
   return (value / rFrom) * rBase;
 }
 
-/** Перевести сумму из основной валюты в `to`. */
-export function fromBase(value: number, to: Currency, s: Settings): number {
-  return toBase(value, s.baseCurrency, { ...s, baseCurrency: to });
-}
-
 export const num = (v: unknown): number => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;

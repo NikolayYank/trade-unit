@@ -328,7 +328,7 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
       tip={editable
         ? 'Главные показатели, на которые вы влияете. В колонке «Сейчас» настоящее значение из ваших данных, оно не меняется.\nВ колонке «Прогноз» впишите, каким оно может стать: вся аналитика слева пересчитается. Пустое поле значит «как сейчас».\nКнопка «Сбросить» очищает прогноз целиком.'
         : 'Главные показатели, на которые вы влияете, с их настоящими значениями. Чтобы прикинуть, что будет при других значениях, переключитесь на «Прогноз» вверху страницы.'}
-      right={editable && count > 0 ? <button className="btn ghost" onClick={() => mutate(d => { delete d.scenario; })}>Сбросить · {count}</button> : undefined}>
+      right={editable && count > 0 ? <button className="btn" onClick={() => mutate(d => { delete d.scenario; })}>Сбросить · {count}</button> : undefined}>
       <div className={`lever head ${editable ? '' : 'plain'}`}><span>Показатель</span><span className="r">Сейчас</span>{editable && <><span className="r">Прогноз</span><span className="r">Изменение</span></>}</div>
       <div className="lever-scroll">
         <div className="lever-box">

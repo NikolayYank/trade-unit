@@ -9,7 +9,7 @@ import { calcTaxes } from './taxes';
 import { taxFromPreset } from './taxPresets';
 import type { Db } from './types';
 
-// Курсы v2-файла: 1 USD = 0.92 EUR, 1 CNY = 0.12 EUR → CNY за USD = 0.92 / 0.12
+// Курсы исходного одностраничного калькулятора (v2), с чьими цифрами сверяются тесты: 1 USD = 0.92 EUR, 1 CNY = 0.12 EUR → CNY за USD = 0.92 / 0.12
 const v2Settings = (vatPayer: boolean) => {
   const db = demoDb();
   db.settings.fx = { USD: 1, EUR: 0.92, CNY: 0.92 / 0.12, UAH: 41, UZS: 12000 };
@@ -20,7 +20,7 @@ const v2Settings = (vatPayer: boolean) => {
 const CTX = { vatPayer: false, vatRate: 20 };
 
 describe('себестоимость товара', () => {
-  it('совпадает с однофайловой v2 на демо-полотенце (плательщик НДС)', () => {
+  it('совпадает с эталонными цифрами исходного калькулятора (v2) на демо-полотенце (плательщик НДС)', () => {
     const db = v2Settings(true);
     const c = calcProduct(db.products[0], db.settings);
     const stage = (k: string) => c.stages.find(s => s.key === k)!.total;
@@ -80,20 +80,20 @@ describe('наборы', () => {
 describe('налоги', () => {
   const withPreset = (id: string): Db => { const db = demoDb(); db.settings.tax = taxFromPreset(id); return db; };
 
-  it('ФОП 3 группа: 6% с выручки за вычетом возвратов + ЕСВ фиксированно', () => {
-    const r = calcTaxes(withPreset('ua_fop3'), { revenue: 10000, refunds: 500, profitBeforeTax: 3000 });
+  it('ФОП 3 группа: 6% с выручки + ЕСВ фиксированно', () => {
+    const r = calcTaxes(withPreset('ua_fop3'), { revenue: 10000, profitBeforeTax: 3000 });
     const esv = 1902.34 / 41.5 * 0.86;
-    expect(r.total).toBeCloseTo(9500 * 0.06 + esv, 6);
+    expect(r.total).toBeCloseTo(10000 * 0.06 + esv, 6);
   });
 
   it('ЕООД: 10% с прибыли, затем 5% дивиденд с остатка', () => {
-    const r = calcTaxes(withPreset('bg_eood'), { revenue: 10000, refunds: 0, profitBeforeTax: 2000 });
+    const r = calcTaxes(withPreset('bg_eood'), { revenue: 10000, profitBeforeTax: 2000 });
     expect(r.taxes.map(x => x.amount)).toEqual([200, 90]);        // 10% от 2000, затем 5% от 1800
     expect(2000 - r.total).toBeCloseTo(2000 * 0.9 * 0.95, 9);
   });
 
   it('убыток не облагается налогом на прибыль и дивидендом', () => {
-    const r = calcTaxes(withPreset('bg_eood'), { revenue: 10000, refunds: 0, profitBeforeTax: -500 });
+    const r = calcTaxes(withPreset('bg_eood'), { revenue: 10000, profitBeforeTax: -500 });
     expect(r.total).toBe(0);
   });
 

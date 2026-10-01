@@ -138,7 +138,7 @@ function ProductEditor({ p, db, mutate, fmt, pc, onSelect }: { p: Product; onSel
     <>
       <div className="content">
         <Card ckey="product:main" title={<input className="title-input" value={p.name} onChange={e => set(x => { x.name = e.target.value; })} />}
-          right={<div className="row-actions"><button className="btn ghost" onClick={duplicate}>Копия</button><button className="btn ghost danger" onClick={remove}>Удалить</button></div>}>
+          right={<div className="row-actions"><button className="btn" onClick={duplicate}>Копия</button><button className="btn danger" onClick={remove}>Удалить</button></div>}>
           <div className="prod-grid">
             <Group title="О товаре">
               <Field size="m" label="Артикул" tip="Ваш код товара. Нужен только для поиска."><Text value={p.sku} onChange={v => set(x => { x.sku = v; })} /></Field>
@@ -373,7 +373,7 @@ function ExpenseList({ p, stage, set, fmt, c }: { p: Product; stage: StageKey; s
           </div>
         );
       })}
-      <button className="add-row" onClick={() => set(x => { x.expenses[stage].push({ id: uid(), name: 'Новый расход', basis: 'fixed', value: 0, currency: x.unitCostCurrency }); })}>+ Расход</button>
+      <button className="btn sm add-btn" onClick={() => set(x => { x.expenses[stage].push({ id: uid(), name: 'Новый расход', basis: 'fixed', value: 0, currency: x.unitCostCurrency }); })}>+ Расход</button>
     </div>
   );
 }

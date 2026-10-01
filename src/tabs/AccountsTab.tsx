@@ -19,8 +19,8 @@ export function AccountsCard({ ops }: { ops: AccountOps }) {
                   товаров {a.db.products.length} · {days === null ? 'в файл не сохраняли' : days === 0 ? 'сохранена в файл сегодня' : `в файл сохраняли ${days} дн. назад`}
                 </span>
               </div>
-              {isActive ? <span className="badge">открыта</span> : <button className="btn ghost sm" onClick={() => ops.switchTo(a.id)}>Открыть</button>}
-              <button className="btn ghost sm" onClick={() => ops.exportOne(a.id)}>В файл</button>
+              {isActive ? <span className="badge">открыта</span> : <button className="btn sm" onClick={() => ops.switchTo(a.id)}>Открыть</button>}
+              <button className="btn sm" onClick={() => ops.exportOne(a.id)}>В файл</button>
               <button className="icon-btn" title={accounts.list.length < 2 ? 'Последнюю учётную запись удалить нельзя' : 'Удалить'}
                 disabled={accounts.list.length < 2} onClick={() => ops.remove(a.id)}>×</button>
             </div>
@@ -30,7 +30,7 @@ export function AccountsCard({ ops }: { ops: AccountOps }) {
       <div className="btn-row mt">
         <button className="btn primary sm" onClick={ops.create}>+ Новая</button>
         <button className="btn sm" onClick={ops.importFile}>Открыть из файла</button>
-        <button className="btn ghost sm" onClick={ops.addDemo}>Добавить пример</button>
+        <button className="btn sm" onClick={ops.addDemo}>Добавить пример</button>
       </div>
     </Card>
   );

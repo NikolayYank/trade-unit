@@ -134,7 +134,7 @@ export function SettingsTab({ db, mutate, ops }: P) {
           <Del onClick={() => mutate(d => { d.settings.tax.lines.splice(i, 1); custom(d); })} />
         </div>
       ))}
-      <button className="add-row" onClick={() => mutate(d => { d.settings.tax.lines.push({ id: uid(), name: 'Налог', base: 'revenue', rate: 0, amount: 0, currency: d.settings.baseCurrency }); custom(d); })}>+ Налог</button>
+      <button className="btn sm add-btn" onClick={() => mutate(d => { d.settings.tax.lines.push({ id: uid(), name: 'Налог', base: 'revenue', rate: 0, amount: 0, currency: d.settings.baseCurrency }); custom(d); })}>+ Налог</button>
     </div>
     
           </div>

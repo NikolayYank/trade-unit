@@ -130,7 +130,7 @@ export function App() {
       <header className="topbar">
         <div className="brand">
           <div className="brand-mark">TU</div>
-          <div><h1>Trade Unit</h1><span>Калькулятор товарного бизнеса</span></div>
+          <div><h1>Trade Unit</h1><a className="brand-by" href="https://portfolio.defo-tech.shop/" target="_blank" rel="noopener noreferrer" title="Портфолио автора">by Defo</a></div>
         </div>
         <nav className="tabs">
           {TABS.map(([id, label]) => (
@@ -143,7 +143,7 @@ export function App() {
             {accs.list.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             <option value="__new">+ Новая учётная запись</option>
           </select>
-          <button className="btn ghost" onClick={ops.importFile}>Открыть файл</button>
+          <button className="btn" onClick={ops.importFile}>Открыть файл</button>
           <button className="btn primary" onClick={() => ops.exportOne(active.id)}>Сохранить в файл</button>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden
             onChange={e => { const f = e.target.files?.[0]; if (f) importAccount(f); e.target.value = ''; }} />

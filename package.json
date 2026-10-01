@@ -1,6 +1,7 @@
 {
   "name": "trade-unit",
   "private": true,
+  "author": "Defo (https://portfolio.defo-tech.shop/)",
   "version": "1.0.0",
   "description": "Калькулятор малого товарного бизнеса: себестоимость, наборы, каналы продаж, магазин, аналитика. Статичный сайт, данные в браузере.",
   "type": "module",

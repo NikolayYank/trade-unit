@@ -20,6 +20,7 @@
   --field-line: #2a3040;
   --btn-bg: #262c3b;        /* кнопки выпуклые: светлее карточки */
   --btn-bg-hover: #2f3648;
+  --btn-line: #3a4256;      /* рамка кнопок */
   --mod: 112px;             /* модуль ширины поля */
   --gap: 14px;              /* шаг между полями */
   --pair-w: 196px;          /* ширина пары «число + валюта» в строках расходов */
@@ -63,7 +64,8 @@ h2 { margin: 0; font-size: 22px; letter-spacing: -.03em }
 .brand { display: flex; align-items: center; gap: 12px }
 .brand-mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--text); color: var(--panel); font-weight: 800; font-size: 13px }
 .brand h1 { font-size: 14px; margin: 0; font-weight: 650 }
-.brand span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px }
+.brand-by { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; text-decoration: none; width: fit-content }
+.brand-by:hover { color: var(--text); text-decoration: underline }
 .tabs { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); flex-wrap: wrap }
 .tab { border: 0; background: transparent; color: var(--muted); padding: 7px 13px; border-radius: 7px; font-weight: 600 }
 .tab.active { background: var(--panel-3); color: var(--text) }
@@ -73,7 +75,7 @@ h2 { margin: 0; font-size: 22px; letter-spacing: -.03em }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px;
-  border: 0; border-radius: 9px; background: var(--btn-bg); color: var(--text);
+  border: 1px solid var(--btn-line); border-radius: 9px; background: var(--btn-bg); color: var(--text);
   font-size: 13px; font-weight: 600; white-space: nowrap;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 1px 2px rgba(0, 0, 0, .35);
   transition: background .12s, transform .06s;
@@ -81,17 +83,14 @@ h2 { margin: 0; font-size: 22px; letter-spacing: -.03em }
 .btn:hover:not(:disabled) { background: var(--btn-bg-hover) }
 .btn:active:not(:disabled) { transform: translateY(1px) }
 .btn:focus-visible { outline: 2px solid rgba(124, 109, 242, .55); outline-offset: 2px }
-.btn.primary { background: var(--text); color: var(--bg); box-shadow: 0 1px 2px rgba(0, 0, 0, .35) }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .35) }
 .btn.primary:hover:not(:disabled) { background: #ffffff }
-.btn.ghost { background: transparent; box-shadow: none; color: var(--muted) }
-.btn.ghost:hover:not(:disabled) { background: var(--panel-3); color: var(--text) }
-.btn.danger { color: var(--danger) }
-.btn.danger:hover:not(:disabled) { background: rgba(240, 116, 127, .1); color: var(--danger) }
+.btn.danger { color: var(--danger); border-color: rgba(240, 116, 127, .35) }
+.btn.danger:hover:not(:disabled) { background: rgba(240, 116, 127, .12); color: var(--danger) }
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px }
-.icon-btn { width: 32px; height: 32px; flex: none; border: 0; background: transparent; color: var(--muted-2); border-radius: 8px; font-size: 17px; line-height: 1 }
-.icon-btn:hover:not(:disabled) { color: var(--danger); background: rgba(240, 116, 127, .1) }
-.add-row { margin-top: 10px; border: 0; background: transparent; color: var(--accent-text); padding: 4px 8px; margin-left: -8px; border-radius: 7px; font-size: 12px; font-weight: 600; align-self: flex-start }
-.add-row:hover:not(:disabled) { background: var(--accent-soft) }
+.icon-btn { width: 32px; height: 32px; flex: none; border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--muted); border-radius: 8px; font-size: 17px; line-height: 1; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 1px 2px rgba(0, 0, 0, .35) }
+.icon-btn:hover:not(:disabled) { color: var(--danger); border-color: rgba(240, 116, 127, .35); background: rgba(240, 116, 127, .12) }
+.add-btn { margin-top: 10px; align-self: flex-start }
 
 /* ---------- раскладки ---------- */
 .shell { max-width: 1560px; margin: 0 auto; padding: 20px 24px 60px }
@@ -133,7 +132,6 @@ h2 { margin: 0; font-size: 22px; letter-spacing: -.03em }
 .row-actions { display: flex; gap: 6px }
 
 /* ---------- поля ---------- */
-.grid { display: grid; gap: 12px }
 .mt { margin-top: 14px }
 .mt-s { margin-top: 6px }
 .field { display: flex; flex-direction: column; min-width: 0 }
@@ -173,7 +171,6 @@ details.sub-block[open] summary { margin-bottom: 12px }
 /* ---------- расходы ---------- */
 .expense-list { display: flex; flex-direction: column; gap: 8px }
 .expense-row { display: grid; grid-template-columns: minmax(140px, 260px) 210px var(--pair-w) minmax(70px, 1fr) 32px; gap: 8px; align-items: center }
-.overhead-row { display: grid; grid-template-columns: calc(var(--mod) * 2 + var(--gap)) var(--pair-w) 32px; gap: 8px var(--gap); align-items: center }
 .expense-row.ovh { grid-template-columns: minmax(140px, 260px) 210px var(--pair-w) minmax(70px, 1fr) minmax(70px, 120px) 32px }
 .expense-row.head, .tax-row.head { color: var(--muted-2); font-size: 10px; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; margin-bottom: -2px }
 .expense-row.head .r { text-align: right }
@@ -258,15 +255,11 @@ details.sub-block[open] summary { margin-bottom: 12px }
   .layout-2 { grid-template-columns: minmax(0, 1fr) }
   .sidebar { position: static }
 }
-@media (max-width: 1100px) {
-  .settings-grid { grid-template-columns: 1fr }
-}
 @media (max-width: 860px) {
   .card-head { flex-wrap: wrap }
   .expense-row, .expense-row.ovh { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
   .expense-row > .input:first-child { grid-column: 1 / -1 }
   .tax-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
-  .overhead-row { grid-template-columns: minmax(0, 1fr) 150px 32px }
   .tax-row > .input:first-child { grid-column: 1 / -1 }
 }
 @media (max-width: 640px) {
@@ -307,7 +300,6 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 
 /* ---------- компактная раскладка полей ---------- */
 .row { display: flex; flex-wrap: wrap; gap: 12px var(--gap); align-items: flex-end }
-.groups { display: flex; flex-wrap: wrap; gap: 18px var(--gap) }
 .group-title { color: #b4bccd; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding-bottom: 7px; margin-bottom: 12px; border-bottom: 1px solid var(--line) }
 /* ширина поля кратна модулю: 1, 2 или 3 модуля с шагом — поля в соседних строках встают в одни колонки */
 .field.xs, .field.s, .field.m { width: var(--mod) }
@@ -318,7 +310,6 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .page-head h2 .tip-icon { width: 15px; height: 15px; font-size: 10px }
 @media (max-width: 640px) {
   .field.l, .field.xl { width: 100% }
-  .overhead-row { grid-template-columns: minmax(0, 1fr) 150px 32px }
 }
 
 /* ---------- сворачивание областей ---------- */
@@ -364,11 +355,10 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .fx-src-cell { align-self: end; height: 36px; display: flex; align-items: center }
 .fx-src { color: var(--muted); font-size: 12px }
 
-.narrow-content { max-width: 760px; margin: 0 auto }
 
 .link-field { display: flex; gap: 6px }
 .link-open { display: grid; place-items: center; height: 36px; width: 36px; text-decoration: none; color: var(--text); background: var(--btn-bg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 1px 2px rgba(0, 0, 0, .35) }
-.icon-btn.link-open:hover { background: var(--btn-bg-hover); color: var(--text) }
+.icon-btn.link-open:hover { background: var(--btn-bg-hover); border-color: var(--btn-line); color: var(--text) }
 .link-open.off { opacity: .3; pointer-events: none }
 
 @media (max-width: 640px) {

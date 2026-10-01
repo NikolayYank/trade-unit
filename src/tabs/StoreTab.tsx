@@ -111,7 +111,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
             </table>
           </div>
           {!items.length && <div className="empty">Позиций пока нет. Добавьте первую: товар или набор, которые вы продаёте.</div>}
-          <button className="add-row" onClick={addItem} disabled={!free.length || !db.channels.length}>+ Позиция</button>
+          <button className="btn sm add-btn" onClick={addItem} disabled={!free.length || !db.channels.length}>+ Позиция</button>
         </Card>
 
         <Card ckey="store:results" step="2" title="Что получается по позициям"
@@ -168,7 +168,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
                 </div>
               );
             })}
-            <button className="add-row" onClick={() => mutate(d => { d.store.overhead.push({ id: uid(), name: 'Новый расход', kind: 'fixed', amount: 0, currency: d.settings.baseCurrency }); })}>+ Расход</button>
+            <button className="btn sm add-btn" onClick={() => mutate(d => { d.store.overhead.push({ id: uid(), name: 'Новый расход', kind: 'fixed', amount: 0, currency: d.settings.baseCurrency }); })}>+ Расход</button>
           </div>
         </Card>
       </div>
