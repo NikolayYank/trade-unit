@@ -48,7 +48,6 @@ function RangePicker({ range, setRange, custom, setCustom }: { range: RangeId; s
 }
 
 const CHANNEL_COLORS = ['var(--ch-1)', 'var(--ch-2)', 'var(--ch-3)', 'var(--ch-4)', 'var(--ch-5)', 'var(--ch-6)'];
-const signed = (v: number, text: string) => (v > 1e-9 ? `+${text}` : text);
 
 const VIEWS = [['now', 'Сейчас'], ['forecast', 'Прогноз']] as const;
 type ViewId = (typeof VIEWS)[number][0];
@@ -101,27 +100,41 @@ type SectionProps = { calc: StoreCalc; k: (v: number) => number; fmt: Fmt };
 
 function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc | null; k: (v: number) => number; fmt: Fmt }) {
   const cur = summarize(calc), was = compare && summarize(compare);   // was: текущие значения, с которыми сравнивается прогноз
-  const tiles: { key: string; cls?: string; label: string; tip: string; get: (s: Summary) => number; show: (v: number) => string; delta: (v: number) => string }[] = [
-    { key: 'revenue', cls: 'c-revenue', label: 'Оборот', tip: 'Деньги за проданные заказы (без НДС, если вы с НДС).', get: s => k(s.revenue), show: fmt.money, delta: fmt.money },
-    { key: 'profit', cls: 'c-profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов, включая налоги.', get: s => k(s.profit), show: fmt.money, delta: fmt.money },
-    { key: 'margin', cls: 'c-profit', label: 'Рентабельность', tip: 'Какую часть оборота составляет чистая прибыль.', get: s => s.profitMargin, show: v => fmt.pct(v), delta: v => `${v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} п.п.` },
-    { key: 'sold', label: 'Продано заказов', tip: 'Заказы, которые клиент забрал и оплатил.', get: s => k(s.sold), show: v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 }), delta: v => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) },
-    { key: 'perOrder', cls: 'c-profit', label: 'Прибыль с заказа', tip: 'Чистая прибыль, делённая на число проданных заказов.', get: s => s.profitPerOrder, show: fmt.unit, delta: fmt.unit },
+  const dec = (v: number) => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 });
+  interface Tile { key: string; kind: 'money' | 'pct' | 'x' | 'num'; cls?: string; label: string; tip: string; get: (s: Summary) => number | null; show: (v: number) => string; lowerIsBetter?: boolean }
+  // порядок: сначала продажи, затем затраты и эффективность, затем результат
+  const tiles: Tile[] = [
+    { key: 'revenue', kind: 'money', cls: 'c-revenue', label: 'Оборот', tip: 'Деньги за проданные заказы (без НДС, если вы с НДС).', get: s => k(s.revenue), show: fmt.money },
+    { key: 'sold', kind: 'num', label: 'Продано заказов', tip: 'Заказы, которые клиент забрал и оплатил.', get: s => k(s.sold), show: dec },
+    { key: 'check', kind: 'money', cls: 'c-revenue', label: 'Средний чек', tip: 'Оборот, делённый на число проданных заказов: сколько в среднем приносит один заказ.', get: s => s.avgCheck, show: fmt.unit },
+    { key: 'margin', kind: 'pct', cls: 'c-margin', label: 'Маржинальность', tip: 'Какую часть оборота остаётся после себестоимости товара, до рекламы и накладных расходов.', get: s => s.marginPct, show: v => fmt.pct(v) },
+    { key: 'roas', kind: 'x', cls: 'c-ads', label: 'Отдача рекламы', tip: 'Эффективность рекламы (ROAS): сколько оборота приносит каждая единица рекламы. Например, 4× значит: на €1 рекламы приходится €4 оборота. Чем больше, тем лучше.', get: s => s.roas, show: v => `${dec(v)}×` },
+    { key: 'overhead', kind: 'money', cls: 'c-overhead', label: 'Накладные расходы', tip: 'Все накладные расходы за срок, вместе с налогами.', get: s => k(s.overhead), show: fmt.money, lowerIsBetter: true },
+    { key: 'profit', kind: 'money', cls: 'c-profit', label: 'Чистая прибыль', tip: 'Что остаётся после товара, рекламы и накладных расходов, включая налоги.', get: s => k(s.profit), show: fmt.money },
+    { key: 'profitMargin', kind: 'pct', cls: 'c-profit', label: 'Рентабельность', tip: 'Какую часть оборота составляет чистая прибыль.', get: s => s.profitMargin, show: v => fmt.pct(v) },
+    { key: 'perOrder', kind: 'money', cls: 'c-profit', label: 'Прибыль с заказа', tip: 'Чистая прибыль, делённая на число проданных заказов.', get: s => s.profitPerOrder, show: fmt.unit },
+    { key: 'roi', kind: 'pct', cls: 'c-profit', label: 'Окупаемость затрат', tip: 'Сколько чистой прибыли приносит каждый вложенный рубль затрат (себестоимость, реклама, накладные). 50% значит: на каждые 100 затрат получается 50 чистой прибыли.', get: s => s.roi, show: v => fmt.pct(v) },
   ];
+  /** Разница прогноза и текущего значения: у процентов просто плюс или минус столько-то процентов, у денег и чисел сама разница. */
+  const diff = (t: Tile, d: number) => {
+    const sign = d > 0 ? '+' : '−', a = Math.abs(d);
+    return t.kind === 'money' ? `${sign}${t.show(a)}` : t.kind === 'pct' ? `${sign}${dec(a)}%` : t.kind === 'x' ? `${sign}${dec(a)}×` : `${sign}${dec(a)}`;
+  };
   return (
     <div className="an-kpis">
       {tiles.map(t => {
         const v = t.get(cur), w = was ? t.get(was) : null;
-        const d = w === null ? 0 : v - w;
+        const d = v !== null && w !== null ? v - w : 0;
+        const good = t.lowerIsBetter ? d < -1e-9 : d > 1e-9, bad = t.lowerIsBetter ? d > 1e-9 : d < -1e-9;
         return (
-          <div className={`an-kpi ${t.key === 'profit' ? 'main' : ''}`} key={t.key}>
+          <div className="an-kpi" key={t.key}>
             <div className="an-kpi-l"><Tip text={t.tip}>{t.label}</Tip></div>
-            <div className={`an-kpi-v ${v < 0 ? 'neg' : t.cls ?? ''}`}>{t.show(v)}</div>
-            {w !== null && (
-              <div className="an-kpi-f">
-                <span>сейчас {t.show(w)}</span>
-                <span className={`delta ${d > 1e-9 ? 'up' : d < -1e-9 ? 'down' : ''}`}>{Math.abs(d) < 1e-9 ? '=' : signed(d, t.delta(d))}</span>
-              </div>
+            <div className={`an-kpi-v ${v !== null && v < 0 ? 'neg' : t.cls ?? ''}`}>{v === null ? '—' : t.show(v)}</div>
+            {was && (
+              <>
+                <div className="an-kpi-was">сейчас {w === null ? '—' : t.show(w)}</div>
+                <div className="an-kpi-d"><span className={`delta ${good ? 'up' : bad ? 'down' : ''}`}>{v === null || w === null ? '—' : Math.abs(d) < 1e-9 ? 'без изменений' : diff(t, d)}</span></div>
+              </>
             )}
           </div>
         );

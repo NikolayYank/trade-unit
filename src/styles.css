@@ -529,13 +529,13 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 
 /* ---------- Аналитика ---------- */
 .head-ctl { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end }
-.an-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
+.an-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px }
 .an-kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; min-width: 0 }
 .an-kpi-l { color: var(--muted); font-size: 11px }
 .an-kpi-v { font-size: 22px; font-weight: 720; letter-spacing: -.03em; margin-top: 6px; white-space: nowrap }
-.an-kpi.main .an-kpi-v { font-size: 26px }
 .an-kpi-v.neg { color: var(--danger) }
-.an-kpi-f { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--muted) }
+.an-kpi-was { margin-top: 8px; font-size: 11px; color: var(--muted) }
+.an-kpi-d { margin-top: 5px; min-height: 20px }
 .delta { padding: 1px 6px; border-radius: 5px; background: rgba(255, 255, 255, .05); color: var(--muted); font-weight: 650 }
 .delta.up { background: rgba(85, 197, 154, .14); color: var(--success) }
 .delta.down { background: rgba(240, 116, 127, .14); color: var(--danger) }

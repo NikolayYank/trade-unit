@@ -43,6 +43,10 @@ export interface Summary {
   profit: number;         // чистая прибыль
   profitMargin: number;   // чистая прибыль, % от оборота
   profitPerOrder: number; // чистая прибыль с одного проданного заказа
+  avgCheck: number;       // средний чек: оборот на один проданный заказ
+  marginPct: number;      // маржинальность: (оборот − себестоимость) / оборот, %
+  roas: number | null;    // эффективность рекламы: сколько оборота приходится на единицу рекламы; null — рекламы нет
+  roi: number;            // окупаемость: чистая прибыль / все затраты (себестоимость, реклама, накладные), %
 }
 
 export function summarize(r: StoreCalc): Summary {
@@ -51,6 +55,10 @@ export function summarize(r: StoreCalc): Summary {
     sold, revenue, cogs, ads, overhead: r.overhead, contribution, profit: r.profitAfterOverhead,
     profitMargin: revenue > 0 ? r.profitAfterOverhead / revenue * 100 : 0,
     profitPerOrder: sold > 0 ? r.profitAfterOverhead / sold : 0,
+    avgCheck: sold > 0 ? revenue / sold : 0,
+    marginPct: revenue > 0 ? (revenue - cogs) / revenue * 100 : 0,
+    roas: ads > 0 ? revenue / ads : null,
+    roi: cogs + ads + r.overhead > 0 ? r.profitAfterOverhead / (cogs + ads + r.overhead) * 100 : 0,
   };
 }
 
