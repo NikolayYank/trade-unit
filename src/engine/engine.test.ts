@@ -592,7 +592,7 @@ describe('накладные расходы магазина', () => {
     db.store.overhead = [{ id: 'b', name: 'Эквайринг', kind: 'percent', amount: 0, currency: 'EUR', percent: 2 }];
     const half = calcStore({ ...db, store: { ...db.store, sales: 500 } }).overhead;
     expect(half).toBeCloseTo(calcStore(db).overhead / 2, 9);
-    expect(overheadAmount({ id: 'x', name: 'x', kind: 'fixed', amount: 100, currency: 'EUR' }, 0, 0, db)).toBe(100);
+    expect(overheadAmount({ id: 'x', name: 'x', kind: 'fixed', amount: 100, currency: 'EUR' }, { revenue: 0, sold: 0, ads: 0 }, db)).toBe(100);
   });
 
   it('за штуку: сумма умножается на число проданных, в другой валюте переводится по курсу', () => {
@@ -610,10 +610,26 @@ describe('накладные расходы магазина', () => {
     expect(half.overheadLines[0].amount).toBeCloseTo(1.5 * sold, 9);   // следует за числом проданных
   });
 
+  it('процент от рекламного бюджета: берётся с рекламы и платы каналов, следует за ней', () => {
+    const db = storeDb();
+    db.store.overhead = [{ id: 'a', name: 'Агентство', kind: 'percentAds', amount: 0, currency: 'EUR', percent: 15 }];
+    const r = calcStore(db);
+    expect(r.totals.ads).toBeGreaterThan(0);
+    expect(r.overheadLines[0].amount).toBeCloseTo(r.totals.ads * 0.15, 9);
+    db.scenario = { channels: { [db.channels[0].id]: { cpa: 8 } } };   // реклама канала выросла (было 2)
+    const fc = calcForecast(db, calcAllProducts(db))!;
+    expect(fc.overheadLines[0].amount).toBeCloseTo(fc.totals.ads * 0.15, 9);
+    expect(fc.overheadLines[0].amount).toBeGreaterThan(r.overheadLines[0].amount);
+    db.scenario = { overhead: { a: { percent: 30 } } };               // и процент можно менять в прогнозе
+    expect(calcForecast(db, calcAllProducts(db))!.overheadLines[0].amount).toBeCloseTo(r.totals.ads * 0.30, 9);
+    db.store.overhead[0].kind = 'percent';                              // тот же процент от оборота даёт другую сумму
+    expect(calcStore(db).overheadLines[0].amount).toBeCloseTo(r.totals.revenue * 0.15, 9);
+  });
+
   it('сумма в другой валюте переводится по курсу', () => {
     const db = storeDb();
     const o = { id: 'x', name: 'Аренда', kind: 'fixed' as const, amount: 4150, currency: 'UAH' as const };
-    expect(overheadAmount(o, 0, 0, db)).toBeCloseTo(4150 / 41.5 * 0.86, 9);
+    expect(overheadAmount(o, { revenue: 0, sold: 0, ads: 0 }, db)).toBeCloseTo(4150 / 41.5 * 0.86, 9);
   });
 });
 

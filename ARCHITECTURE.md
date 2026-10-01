@@ -68,7 +68,7 @@ Db
 **Store.items** — позиции плана: `{ offer, share, channels: [{ channelId, share }] }`. `offer` — ссылка вида
 `p:<id товара>` или `k:<id набора>`; `share` — какая часть всех продаж приходится на позицию (в %, сумма по позициям не больше 100);
 `channels` — как продажи этой позиции делятся между каналами (в %, сумма в позиции не больше 100). Цена позиции не хранится: берётся розница из карточки товара или цена набора (в старых данных поле `price` у позиции остаётся и не используется).
-**Store.overhead** — накладные расходы: `kind: 'fixed'` (по умолчанию) — `amount` в своей валюте за месяц, `kind: 'percent'` — `percent` от оборота, `kind: 'perUnit'` — `amount` в своей валюте за каждый проданный заказ (штуку).
+**Store.overhead** — накладные расходы: `kind: 'fixed'` (по умолчанию) — `amount` в своей валюте за месяц, `kind: 'percent'` — `percent` от оборота, `kind: 'percentAds'` — `percent` от рекламного бюджета (`totals.ads`: вся реклама и плата каналов), `kind: 'perUnit'` — `amount` в своей валюте за каждый проданный заказ (штуку).
 
 **TaxConfig** — `presetId`, `vatPayer`, `vatRate`, `lines: TaxLine[]`. У строки налога `base` один из:
 `revenue` (% с выручки), `profit` (% с прибыли), `dividend` (% когда забираете прибыль), `fixed` (сумма в месяц).
@@ -194,8 +194,8 @@ contribution        = revenue − cogs − ads
 не продаёт, он попадает в `blocked` позиции.
 
 ```
-overhead              = Σ накладные расходы: сумма в месяц (в основную валюту), % × оборот (totals.revenue)
-                        или сумма за штуку × продано (totals.sold)
+overhead              = Σ накладные расходы: сумма в месяц (в основную валюту), % × оборот (totals.revenue),
+                        % × рекламный бюджет (totals.ads) или сумма за штуку × продано (totals.sold)
 overheadOwn           = Σ свои накладные расходы (строки выше)
 налоги                = calcTaxes(revenue = totals.revenue, profitBeforeTax = totals.contribution − overheadOwn)
 overhead              = overheadOwn + налоги                  налоги входят в накладные расходы

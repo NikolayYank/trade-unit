@@ -453,8 +453,8 @@ function Levers({ db, base, mutate, fmt, editable }: { db: P['db']; base: StoreC
             {db.store.overhead.map(o => {
               const kind = o.kind ?? 'fixed', v = sc?.overhead?.[o.id] ?? {};
               const sym = SYMBOLS[o.currency].trim();
-              if (kind === 'percent') {
-                return <Lever editable={editable} key={o.id} label={o.name} tip="Процент от оборота." now={o.percent ?? 0} show={fmt.pct} value={v.percent} onChange={n => setOverhead(o.id, 'percent', n)} suffix="%" bounds={pct} />;
+              if (kind === 'percent' || kind === 'percentAds') {
+                return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'percent' ? 'Процент от оборота.' : 'Процент от рекламного бюджета.'} now={o.percent ?? 0} show={fmt.pct} value={v.percent} onChange={n => setOverhead(o.id, 'percent', n)} suffix="%" bounds={pct} />;
               }
               const money = (x: number) => `${x.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${sym}`;
               return <Lever editable={editable} key={o.id} label={o.name} tip={kind === 'perUnit' ? 'Сумма за каждую проданную штуку.' : 'Сумма в месяц.'} now={o.amount} show={money} value={v.amount} onChange={n => setOverhead(o.id, 'amount', n)} suffix={sym} />;

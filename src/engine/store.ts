@@ -59,11 +59,18 @@ export interface StoreCalc {
   period: number;        // дней в периоде плана
 }
 
-/** Накладной расход за месяц в основной валюте. Процент считается от оборота, сумма за штуку умножается на число проданных. */
-export function overheadAmount(o: Overhead, revenue: number, sold: number, db: Db): number {
-  if (o.kind === 'percent') return revenue * num(o.percent) / 100;
+/** Итоги месяца, от которых считаются накладные: оборот, число проданных заказов и рекламный бюджет. */
+export interface OverheadBase { revenue: number; sold: number; ads: number }
+
+/**
+ * Накладной расход за месяц в основной валюте. Процент от оборота и процент от рекламного бюджета (вся реклама и плата каналов),
+ * сумма за штуку умножается на число проданных, остальное сумма в месяц.
+ */
+export function overheadAmount(o: Overhead, base: OverheadBase, db: Db): number {
+  if (o.kind === 'percent') return base.revenue * num(o.percent) / 100;
+  if (o.kind === 'percentAds') return base.ads * num(o.percent) / 100;
   const amount = toBase(num(o.amount), o.currency, db.settings);
-  return o.kind === 'perUnit' ? amount * sold : amount;
+  return o.kind === 'perUnit' ? amount * base.sold : amount;
 }
 
 /**
@@ -107,7 +114,7 @@ export function calcStore(db: Db, pc: ProductCalcs = calcAllProducts(db), patch?
   });
 
   const overheadLines = db.store.overhead.map(line => {
-    const amount = overheadAmount(line, totals.revenue, totals.sold, db);
+    const amount = overheadAmount(line, totals, db);
     return { line, amount, perOrder: totals.sold > 0 ? amount / totals.sold : 0 };
   });
   const overheadOwn = overheadLines.reduce((a, x) => a + x.amount, 0);

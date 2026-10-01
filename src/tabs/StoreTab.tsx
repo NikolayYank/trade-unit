@@ -10,7 +10,7 @@ import { TAX_BASES } from '../ui/tips';
 type P = TabProps & { fmt: Fmt; pc: ProductCalcs };
 type MetricColor = 'revenue' | 'cogs' | 'ads' | 'overhead' | 'margin' | 'contrib' | 'profit';
 
-const OVERHEAD_KINDS: [OverheadKind, string][] = [['fixed', 'сумма в месяц'], ['percent', '% от оборота'], ['perUnit', 'за штуку']];
+const OVERHEAD_KINDS: [OverheadKind, string][] = [['fixed', 'сумма в месяц'], ['percent', '% от оборота'], ['percentAds', '% от рекламы'], ['perUnit', 'за штуку']];
 const sumOther = <T,>(list: T[], i: number, get: (x: T) => number) => list.reduce((a, x, k) => a + (k === i ? 0 : get(x)), 0);
 
 export function StoreTab({ db, mutate, fmt, pc }: P) {
@@ -144,7 +144,7 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
         </Card>
 
         <Card ckey="store:overhead" step="3" title="Накладные расходы"
-          tip={'Всё, что вы тратите кроме товара и рекламы: доставка, упаковка, хранение, зарплаты, сервисы, бухгалтер, комиссии, возвраты.\nКак считать каждый расход:\nСумма в месяц: одна сумма за весь месяц, например аренда склада.\n% от оборота: процент от оборота (выручка без НДС, если вы с НДС), например эквайринг.\nЗа штуку: сумма за каждую проданную штуку, например курьер или хранение одной единицы. Умножается на число проданных заказов.\nНалоги по режиму из «Настроек» добавляются снизу сами и входят в накладные расходы.'}>
+          tip={'Всё, что вы тратите кроме товара и рекламы: доставка, упаковка, хранение, зарплаты, сервисы, бухгалтер, комиссии, возвраты.\nКак считать каждый расход:\nСумма в месяц: одна сумма за весь месяц, например аренда склада.\n% от оборота: процент от оборота (выручка без НДС, если вы с НДС), например эквайринг.\n% от рекламы: процент от рекламного бюджета (вся реклама и плата каналов), например оплата таргетолога или агентства.\nЗа штуку: сумма за каждую проданную штуку, например курьер или хранение одной единицы. Умножается на число проданных заказов.\nНалоги по режиму из «Настроек» добавляются снизу сами и входят в накладные расходы.'}>
           <div className="expense-list">
             {st.overhead.length > 0 && (
               <div className="expense-row ovh head">
@@ -158,10 +158,10 @@ export function StoreTab({ db, mutate, fmt, pc }: P) {
                   <input className="input" value={o.name} onChange={e => mutate(d => { d.store.overhead[i].name = e.target.value; })} />
                   <Select value={kind} options={OVERHEAD_KINDS} onChange={v => mutate(d => { d.store.overhead[i].kind = v; })} />
                   <Pair>
-                    {kind === 'percent'
+                    {kind === 'percent' || kind === 'percentAds'
                       ? <Num value={o.percent ?? 0} step={0.1} onChange={v => mutate(d => { d.store.overhead[i].percent = v ?? 0; })} />
                       : <Num value={o.amount} onChange={v => mutate(d => { d.store.overhead[i].amount = v ?? 0; })} />}
-                    {kind === 'percent' ? <Unit>%</Unit> : <CurrencySelect value={o.currency} onChange={v => mutate(d => { d.store.overhead[i].currency = v; })} />}
+                    {kind === 'percent' || kind === 'percentAds' ? <Unit>%</Unit> : <CurrencySelect value={o.currency} onChange={v => mutate(d => { d.store.overhead[i].currency = v; })} />}
                   </Pair>
                   <span className="exp-sum">{fmt.money(r.overheadLines[i]?.amount ?? 0)}</span>
                   <span className="exp-sum">{fmt.unit(r.overheadLines[i]?.perOrder ?? 0)}</span>

@@ -97,14 +97,14 @@ export interface PlanItem {
   channels: ChannelShare[]; // доли каналов в продажах этой позиции; сумма не больше 100
 }
 
-export type OverheadKind = 'fixed' | 'percent' | 'perUnit';
+export type OverheadKind = 'fixed' | 'percent' | 'percentAds' | 'perUnit';
 
-/** Накладной расход: сумма в месяц, процент от оборота или сумма за каждую проданную штуку. */
+/** Накладной расход: сумма в месяц, процент от оборота, процент от рекламного бюджета или сумма за каждую проданную штуку. */
 export interface Overhead {
   id: string; name: string;
   kind?: OverheadKind;     // нет поля — сумма в месяц
   amount: number; currency: Currency; // для суммы в месяц и суммы за штуку
-  percent?: number;        // для процента от оборота (выручки без НДС)
+  percent?: number;        // для процента от оборота (выручки без НДС) и от рекламного бюджета
 }
 
 export interface Store {
