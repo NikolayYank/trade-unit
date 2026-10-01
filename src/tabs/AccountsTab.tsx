@@ -13,16 +13,14 @@ export function AccountsCard({ ops }: { ops: AccountOps }) {
           const days = a.db.lastBackup ? Math.floor((Date.now() - Date.parse(a.db.lastBackup)) / 864e5) : null;
           return (
             <div className={`acc-row ${isActive ? 'active' : ''}`} key={a.id}>
-              <div className="acc-name">
-                <input className="input" value={a.name} onChange={e => ops.rename(a.id, e.target.value)} />
-                <span className="acc-meta">
-                  товаров {a.db.products.length} · {days === null ? 'в файл не сохраняли' : days === 0 ? 'сохранена в файл сегодня' : `в файл сохраняли ${days} дн. назад`}
-                </span>
-              </div>
-              {isActive ? <span className="badge">открыта</span> : <button className="btn sm" onClick={() => ops.switchTo(a.id)}>Открыть</button>}
-              <button className="btn sm" onClick={() => ops.exportOne(a.id)}>В файл</button>
+              <input className="input" value={a.name} onChange={e => ops.rename(a.id, e.target.value)} />
+              {isActive ? <span /> : <button className="btn" onClick={() => ops.switchTo(a.id)}>Открыть</button>}
+              <button className="btn" onClick={() => ops.exportOne(a.id)}>В файл</button>
               <button className="icon-btn" title={accounts.list.length < 2 ? 'Последнюю учётную запись удалить нельзя' : 'Удалить'}
                 disabled={accounts.list.length < 2} onClick={() => ops.remove(a.id)}>×</button>
+              <span className="acc-meta">
+                товаров {a.db.products.length} · {days === null ? 'в файл не сохраняли' : days === 0 ? 'сохранена в файл сегодня' : `в файл сохраняли ${days} дн. назад`}
+              </span>
             </div>
           );
         })}
