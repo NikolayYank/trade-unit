@@ -531,6 +531,8 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .head-ctl { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end }
 .an-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px }
 .an-kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; min-width: 0 }
+/* главная метрика (чистая прибыль): едва заметная зелёная заливка и рамка */
+.an-kpi.main { background: linear-gradient(160deg, rgba(61, 220, 151, .13), rgba(61, 220, 151, .03) 70%), var(--panel); border-color: rgba(61, 220, 151, .32) }
 .an-kpi-l { color: var(--muted); font-size: 11px }
 .an-kpi-v { font-size: 22px; font-weight: 720; letter-spacing: -.03em; margin-top: 6px; white-space: nowrap }
 .an-kpi-v.neg { color: var(--danger) }

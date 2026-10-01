@@ -127,7 +127,7 @@ function Kpis({ calc, compare, k, fmt }: { calc: StoreCalc; compare: StoreCalc |
         const d = v !== null && w !== null ? v - w : 0;
         const good = t.lowerIsBetter ? d < -1e-9 : d > 1e-9, bad = t.lowerIsBetter ? d > 1e-9 : d < -1e-9;
         return (
-          <div className="an-kpi" key={t.key}>
+          <div className={`an-kpi ${t.key === 'profit' ? 'main' : ''}`} key={t.key}>
             <div className="an-kpi-l"><Tip text={t.tip}>{t.label}</Tip></div>
             <div className={`an-kpi-v ${v !== null && v < 0 ? 'neg' : t.cls ?? ''}`}>{v === null ? '—' : t.show(v)}</div>
             {was && (
