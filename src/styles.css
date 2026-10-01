@@ -35,6 +35,7 @@
   --c-overhead: #ff9a4d;    /* накладные расходы */
   --c-profit: #3ddc97;      /* чистая прибыль */
   /* Цвета каналов продаж на кольце и в таблице: не совпадают с цветами показателей. */
+  --c-group: #e0cf9f;       /* названия групп (канал, позиция) в панели показателей: не цвет показателя и не акцент */
   --ch-1: #f472b6;
   --ch-2: #facc15;
   --ch-3: #94a3b8;
@@ -581,7 +582,7 @@ select.input option, select.input optgroup { background: var(--panel-2); color: 
 .lever.set .lever-in .input { border-color: var(--accent); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35), 0 0 0 1px var(--accent-soft) }
 .lever-box { margin-top: 10px; padding: 9px 12px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2) }
 .lever-box:first-child { margin-top: 10px }
-.lever-group { margin: 0 0 4px; color: var(--text); font-size: 12px; font-weight: 650; letter-spacing: .01em }
+.lever-group { margin: 0 0 4px; color: var(--c-group); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 650; letter-spacing: .01em }
 
 @media (max-width: 760px) {
   .legend-track { height: auto !important; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
