@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import type { TabProps } from '../App';
 import { deleteChannel } from '../dbOps';
-import { newChannel } from '../demo';
+import { newChannel } from '../factories';
 import { funnelView, isPercentAd, usdToBase, type FunnelStage } from '../engine/channel';
 import type { AdMode, Channel } from '../engine/types';
 import { Card, Del, Field, GroupedInt, Num, Pair, Segmented, Tip, UnitToggle, type Fmt } from '../ui/kit';

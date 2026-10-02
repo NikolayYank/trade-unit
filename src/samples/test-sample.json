@@ -1,0 +1,406 @@
+{
+  "kind": "trade_unit_account",
+  "name": "Тест-пример",
+  "db": {
+    "version": 1,
+    "settings": {
+      "baseCurrency": "UAH",
+      "fx": {
+        "USD": 1,
+        "EUR": 0.8678,
+        "CNY": 6.573,
+        "UAH": 43.9542,
+        "UZS": 11577.22
+      },
+      "fxUpdated": "01.10.2026, центробанки + 2%",
+      "tax": {
+        "presetId": "ua_fop2",
+        "vatPayer": false,
+        "vatRate": 20,
+        "lines": [
+          {
+            "id": "i7dtar0g",
+            "name": "Единый налог",
+            "base": "fixed",
+            "rate": 0,
+            "amount": 1729.4,
+            "currency": "UAH"
+          },
+          {
+            "id": "fbr44qpu",
+            "name": "Военный сбор",
+            "base": "fixed",
+            "rate": 0,
+            "amount": 864.7,
+            "currency": "UAH"
+          },
+          {
+            "id": "iw7fghsd",
+            "name": "ЕСВ (соцвзнос)",
+            "base": "fixed",
+            "rate": 0,
+            "amount": 1902.34,
+            "currency": "UAH"
+          }
+        ]
+      },
+      "fxMarket": {
+        "EUR": 0.88511,
+        "CNY": 6.7045,
+        "UAH": 44.8333,
+        "UZS": 11808.76
+      },
+      "cpmInUsd": true
+    },
+    "products": [
+      {
+        "id": "8sqg0eny",
+        "name": "Полотенце",
+        "sku": "",
+        "origin": "import",
+        "batchQty": 5000,
+        "unitCost": 9.4,
+        "unitCostCurrency": "CNY",
+        "defectRate": 0.5,
+        "unitWeight": 0.24,
+        "unitVolume": 0.001,
+        "unitsPerCarton": 300,
+        "cartonWeight": 72,
+        "volCoef": 0,
+        "expenses": {
+          "purchase": [
+            {
+              "id": "cpg1mvza",
+              "name": "Комиссия брокера",
+              "basis": "pct_purchase",
+              "value": 4,
+              "currency": "CNY"
+            }
+          ],
+          "local": [
+            {
+              "id": "ucdc5ffl",
+              "name": "Доставка по Китаю",
+              "basis": "per_kg",
+              "value": 2,
+              "currency": "CNY"
+            }
+          ],
+          "intl": [
+            {
+              "id": "dlavyx3e",
+              "name": "Доставка морем",
+              "basis": "per_cbm",
+              "value": 750,
+              "currency": "USD"
+            },
+            {
+              "id": "j0ukb7tr",
+              "name": "Доставка новой почтой",
+              "basis": "fixed",
+              "value": 12000,
+              "currency": "UAH"
+            },
+            {
+              "id": "fh1tv8ix",
+              "name": "Доставка на склад",
+              "basis": "fixed",
+              "value": 2000,
+              "currency": "UAH"
+            }
+          ],
+          "import": [],
+          "pack": [
+            {
+              "id": "n6k309xq",
+              "name": "Фирменный пакет",
+              "basis": "per_unit",
+              "value": 14,
+              "currency": "UAH"
+            },
+            {
+              "id": "7h6zh9qk",
+              "name": "Нанесение",
+              "basis": "per_unit",
+              "value": 2,
+              "currency": "UAH"
+            }
+          ]
+        },
+        "stock": 0,
+        "price": 390,
+        "notes": "",
+        "wholesalePrice": 235
+      }
+    ],
+    "kits": [
+      {
+        "id": "5jka1vra",
+        "name": "Набор из 2х",
+        "items": [
+          {
+            "productId": "8sqg0eny",
+            "qty": 2
+          }
+        ],
+        "packCost": 0,
+        "price": 690
+      },
+      {
+        "id": "cn2tqu18",
+        "name": "Набор из 3х",
+        "items": [
+          {
+            "productId": "8sqg0eny",
+            "qty": 3
+          }
+        ],
+        "packCost": 0,
+        "price": 990
+      },
+      {
+        "id": "k47ddoad",
+        "name": "Набор из 4х",
+        "items": [
+          {
+            "productId": "8sqg0eny",
+            "qty": 4
+          }
+        ],
+        "packCost": 0,
+        "price": 1280
+      },
+      {
+        "id": "ivbbk356",
+        "name": "Опт поштучно",
+        "items": [
+          {
+            "productId": "8sqg0eny",
+            "qty": 1
+          }
+        ],
+        "packCost": 0,
+        "price": 235
+      }
+    ],
+    "channels": [
+      {
+        "id": "h9h89bos",
+        "name": "FB / INST",
+        "adMode": "funnel",
+        "cpa": 150,
+        "cpm": 3.5,
+        "ctr": 1.7,
+        "cr": 6,
+        "approve": 90,
+        "buyout": 95,
+        "cpaType": "money"
+      },
+      {
+        "id": "m3b0nxl8",
+        "name": "Rozetka",
+        "adMode": "cpa",
+        "cpa": 0,
+        "cpaType": "percent",
+        "cpaPercent": 20,
+        "cpm": 0,
+        "ctr": 0,
+        "cr": 0,
+        "approve": 95,
+        "buyout": 90
+      },
+      {
+        "id": "blihshui",
+        "name": "Оптовики",
+        "adMode": "cpa",
+        "cpa": 0,
+        "cpaType": "percent",
+        "cpaPercent": 0,
+        "cpm": 0,
+        "ctr": 0,
+        "cr": 0,
+        "approve": 100,
+        "buyout": 100
+      }
+    ],
+    "store": {
+      "overhead": [
+        {
+          "id": "pducvawh",
+          "name": "Склад + доставка",
+          "kind": "percent",
+          "amount": 0,
+          "currency": "UAH",
+          "percent": 5
+        },
+        {
+          "id": "a9yvdiht",
+          "name": "Упаковка на почте",
+          "kind": "perUnit",
+          "amount": 10,
+          "currency": "UAH"
+        },
+        {
+          "id": "2euhjp1m",
+          "name": "CRM + SMS ",
+          "kind": "fixed",
+          "amount": 5000,
+          "currency": "UAH"
+        },
+        {
+          "id": "onbqfoer",
+          "name": "Бухгалтер",
+          "kind": "fixed",
+          "amount": 4000,
+          "currency": "UAH"
+        },
+        {
+          "id": "mcfthzwk",
+          "name": "Таргетолог",
+          "kind": "percentAds",
+          "amount": 0,
+          "currency": "UAH",
+          "percent": 8
+        },
+        {
+          "id": "wxvvn85o",
+          "name": "Менеджер",
+          "kind": "percent",
+          "amount": 0,
+          "currency": "UAH",
+          "percent": 7
+        },
+        {
+          "id": "gqq55959",
+          "name": "Прочие  ",
+          "kind": "fixed",
+          "amount": 8000,
+          "currency": "UAH"
+        }
+      ],
+      "sales": 600,
+      "items": [
+        {
+          "id": "z1hwditc",
+          "offer": "p:8sqg0eny",
+          "share": 30,
+          "channels": [
+            {
+              "channelId": "m3b0nxl8",
+              "share": 20
+            },
+            {
+              "channelId": "h9h89bos",
+              "share": 80
+            }
+          ]
+        },
+        {
+          "id": "1b9m5e6y",
+          "offer": "k:5jka1vra",
+          "share": 25,
+          "channels": [
+            {
+              "channelId": "m3b0nxl8",
+              "share": 20
+            },
+            {
+              "channelId": "h9h89bos",
+              "share": 80
+            }
+          ]
+        },
+        {
+          "id": "uygv7do9",
+          "offer": "k:cn2tqu18",
+          "share": 20,
+          "channels": [
+            {
+              "channelId": "m3b0nxl8",
+              "share": 20
+            },
+            {
+              "channelId": "h9h89bos",
+              "share": 80
+            }
+          ]
+        },
+        {
+          "id": "7wyyjqg6",
+          "offer": "k:k47ddoad",
+          "share": 10,
+          "channels": [
+            {
+              "channelId": "m3b0nxl8",
+              "share": 20
+            },
+            {
+              "channelId": "h9h89bos",
+              "share": 80
+            }
+          ]
+        },
+        {
+          "id": "bohgv6g1",
+          "offer": "k:ivbbk356",
+          "share": 15,
+          "channels": [
+            {
+              "channelId": "blihshui",
+              "share": 100
+            },
+            {
+              "channelId": "h9h89bos",
+              "share": 0
+            }
+          ]
+        }
+      ],
+      "period": 30
+    },
+    "lastBackup": null,
+    "scenario": {
+      "sales": 900,
+      "offers": {
+        "p:8sqg0eny": {
+          "unitCost": 115
+        },
+        "k:5jka1vra": {
+          "unitCost": 230
+        },
+        "k:cn2tqu18": {
+          "unitCost": 345
+        },
+        "k:k47ddoad": {
+          "unitCost": 460
+        },
+        "k:ivbbk356": {
+          "unitCost": 115
+        }
+      },
+      "channels": {
+        "h9h89bos": {
+          "approve": 92,
+          "ctr": 1.8,
+          "cpm": 3.2,
+          "cr": 6.5,
+          "buyout": 96
+        }
+      },
+      "overhead": {
+        "9job2fl8": {
+          "percent": 8
+        },
+        "z2drflzf": {
+          "amount": 9
+        },
+        "ucos3dn0": {
+          "percent": 4.5
+        },
+        "gqq55959": {
+          "amount": 12000
+        }
+      }
+    }
+  }
+}

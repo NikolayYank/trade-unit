@@ -1,6 +1,7 @@
 // Хранение: несколько учётных записей в localStorage. Учётная запись = отдельная база
 // (товары, наборы, каналы, магазин, настройки). Файл JSON — одна учётная запись.
-import { DEMO_NAME, demoDb, emptyDb } from './demo';
+import { emptyDb } from './factories';
+import sample from './samples/test-sample.json';
 import { uid } from './engine/taxPresets';
 import { approveShare, buyoutShare, usdToBase } from './engine/channel';
 import { num } from './engine/money';
@@ -29,8 +30,19 @@ export function loadAccounts(): Accounts {
       return { activeId: acc.id, list: [acc] };
     }
   } catch { /* битые данные или запрет хранилища — стартуем с примера */ }
-  const acc = { id: uid(), name: DEMO_NAME, db: demoDb() };
-  return { activeId: acc.id, list: [acc] };
+  return firstRun();
+}
+
+/** Название учётной записи с образцом: тестовые данные, на которых видно, как всё работает. */
+export const SAMPLE_NAME = 'Тест-пример';
+
+/** Образец из `src/samples/test-sample.json`: свежая копия, пропущенная через проверку и миграции. */
+export const sampleDb = (): Db => parseAccountFile(JSON.stringify(sample), SAMPLE_NAME).db;
+
+/** Первый запуск: две учётные записи, образец с данными (открыт) и пустая для своих данных. */
+function firstRun(): Accounts {
+  const demo = newAccount(SAMPLE_NAME, sampleDb());
+  return { activeId: demo.id, list: [demo, newAccount('Пустая')] };
 }
 
 export function saveAccounts(a: Accounts): boolean {

@@ -1,44 +1,11 @@
-// Демо-данные: стартовая база при первом открытии и по кнопке «Загрузить демо».
-import { taxFromPreset, uid, emptyTax } from './engine/taxPresets';
-import type { Channel, Db, Expense, ExpenseBasis, Product, StageKey, Currency } from './engine/types';
+// Данные для тестов расчётов (не для пользователя): небольшая учётная запись в евро с цифрами, на которые опираются проверки.
+// Образец для пользователя лежит в src/samples/test-sample.json.
+import { emptyStages, newChannel, newProduct } from './factories';
+import { taxFromPreset, uid } from './engine/taxPresets';
+import type { Channel, Currency, Db, Expense, ExpenseBasis, Product } from './engine/types';
 
 const ex = (name: string, basis: ExpenseBasis, value: number, currency: Currency = 'EUR'): Expense =>
   ({ id: uid(), name, basis, value, currency });
-
-const emptyStages = (): Record<StageKey, Expense[]> => ({ purchase: [], local: [], intl: [], import: [], pack: [] });
-
-/** Новый товар: все числа нулевые, расходов нет — человек заполняет сам. */
-export function newProduct(name = 'Новый товар', currency: Currency = 'USD'): Product {
-  return {
-    id: uid(), name, sku: '', supplierUrl: '', origin: 'import', batchQty: 0, unitCost: 0, unitCostCurrency: currency,
-    defectRate: 0, unitWeight: 0, unitVolume: 0, unitsPerCarton: 0, cartonWeight: 0, volCoef: 0,
-    expenses: emptyStages(), stock: 0, price: 0, wholesalePrice: 0, notes: '',
-  };
-}
-
-export function newChannel(): Channel {
-  return { id: uid(), name: 'Новый канал', adMode: 'cpa', cpa: 0, cpaType: 'money', cpaPercent: 0, cpm: 0, ctr: 0, cr: 0, approve: 100, buyout: 100 };
-}
-
-/** Пустая учётная запись: без товаров, каналов, расходов, курсов и налогов. Основная валюта USD — единственная, которой не нужен курс. */
-export function emptyDb(): Db {
-  return {
-    version: 1,
-    settings: {
-      baseCurrency: 'USD',
-      fx: { USD: 1, EUR: 0, CNY: 0, UAH: 0, UZS: 0 },
-      fxUpdated: '',
-      cpmInUsd: true,
-      tax: emptyTax(),
-    },
-    products: [], kits: [], channels: [],
-    store: { sales: 0, period: 30, items: [], overhead: [] },
-    lastBackup: null,
-  };
-}
-
-/** Название учётной записи с демо-данными: тестовый образец, на котором видно, как всё работает. */
-export const DEMO_NAME = 'Тест-пример';
 
 export function demoDb(): Db {
   const towel: Product = {

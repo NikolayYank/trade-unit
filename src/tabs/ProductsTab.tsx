@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { TabProps } from '../App';
 import { deleteProduct, duplicateProduct, productUsage } from '../dbOps';
-import { newProduct } from '../demo';
+import { newProduct } from '../factories';
 import type { ProductCalcs } from '../engine/offers';
 import type { ProductCalc } from '../engine/product';
 import { activeStages, costBreakdown, PERCENT_BASES, priceMetrics, STAGE_LABELS, type BreakdownRow } from '../engine/product';

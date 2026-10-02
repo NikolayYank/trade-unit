@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { demoDb } from '../demo';
+import { demoDb } from '../testFixture';
 import { channelFunnel, funnelView, orderCtx, orderEconomics } from './channel';
 import { calcProduct } from './product';
 import { calcAllProducts, kitOffer } from './offers';
@@ -173,7 +173,7 @@ describe('данные', () => {
 
 describe('учётные записи', () => {
   it('пустая учётная запись: всё по нулям, расчёт не падает', async () => {
-    const { emptyDb } = await import('../demo');
+    const { emptyDb } = await import('../factories');
     const db = emptyDb();
     expect(db.products.length + db.channels.length + db.store.overhead.length + db.settings.tax.lines.length).toBe(0);
     const r = calcStore(db);
@@ -908,5 +908,42 @@ describe('аналитика и прогноз', () => {
     expect(db.scenario.channels![id].cpm).toBe(8.6);
     expect(db.scenario.channels![id].ctr).toBe(2);
     expect(db.scenario.offers![ref].price).toBeCloseTo(10, 1);
+  });
+});
+
+describe('образец и первый запуск', () => {
+  it('образец из src/samples читается, проходит миграции и считается', async () => {
+    const { sampleDb } = await import('../storage');
+    const db = sampleDb();
+    expect(db.products.length).toBeGreaterThan(0);
+    expect(db.kits.length).toBeGreaterThan(0);
+    expect(db.channels.length).toBeGreaterThan(0);
+    expect(db.settings.cpmInUsd).toBe(true);
+    const r = calcStore(db);
+    expect(r.totals.sold).toBeGreaterThan(0);
+    expect(Number.isFinite(r.profitAfterOverhead)).toBe(true);
+    expect(r.items.every(i => i.offer !== null)).toBe(true);          // все позиции плана находят свои товары и наборы
+    expect(r.taxes).toBeGreaterThan(0);                               // налоги режима подключены
+    expect(db.scenario).toBeDefined();                                // в образце есть и прогноз
+    expect(calcForecast(db, calcAllProducts(db))).not.toBeNull();
+  });
+
+  it('образец без устаревших полей и каждый раз новая копия', async () => {
+    const { sampleDb } = await import('../storage');
+    const a = sampleDb(), st = a.store as unknown as Record<string, unknown>;
+    for (const k of ['plan', 'shipping', 'returns', 'fee', 'noBuy']) expect(st[k]).toBeUndefined();
+    expect(a.lastBackup).toBeNull();
+    a.products[0].name = 'изменено';
+    expect(sampleDb().products[0].name).not.toBe('изменено');
+  });
+
+  it('первый запуск: две записи, образец (открыт) и пустая', async () => {
+    const { loadAccounts, SAMPLE_NAME } = await import('../storage');
+    const a = loadAccounts();                                         // в тестах хранилища нет: как первый запуск
+    expect(a.list.map(x => x.name)).toEqual([SAMPLE_NAME, 'Пустая']);
+    expect(a.activeId).toBe(a.list[0].id);
+    const empty = a.list[1].db;
+    expect(empty.products.length + empty.channels.length + empty.store.items.length + empty.settings.tax.lines.length).toBe(0);
+    expect(a.list[0].db.products.length).toBeGreaterThan(0);
   });
 });
